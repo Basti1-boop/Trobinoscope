@@ -29,9 +29,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   // Hachage du mot de passe
   $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
+  $avatar = 'default.svg';
+  $maxFileSize = 2097152;
+  $allowedMimeTypes = [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/avif',
+  ];
+
+  // Pendant le développement, décommentez pour inspecter la structure de $_FILES.
+  // var_dump($_FILES);
+
+  if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+    $avatarTmpPath = $_FILES['avatar']['tmp_name'];
+    $avatarOriginalName = $_FILES['avatar']['name'];
+    $avatarSize = (int) $_FILES['avatar']['size'];
+    $avatarMimeType = mime_content_type($avatarTmpPath);
+
+    if ($avatarSize <= $maxFileSize && in_array($avatarMimeType, $allowedMimeTypes, true)) {
+      $uploadsDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads';
+      if (!is_dir($uploadsDir)) {
+        mkdir($uploadsDir, 0755, true);
+      }
+
+      $extension = strtolower(pathinfo($avatarOriginalName, PATHINFO_EXTENSION));
+      $uniqueAvatarName = uniqid('avatar_', true) . ($extension ? '.' . $extension : '');
+      $destination = $uploadsDir . DIRECTORY_SEPARATOR . $uniqueAvatarName;
+
+      if (move_uploaded_file($avatarTmpPath, $destination)) {
+        $avatar = $uniqueAvatarName;
+      }
+    }
+  }
+
   // Insertion dans la base de données
-  $stmt = $pdo->prepare("INSERT INTO utilisateurs (prenom, nom, email, password, promo, specialite, bio) VALUES (?, ?, ?, ?, ?, ?, ?)");
-  $stmt->execute([$prenom, $nom, $email, $hashedPassword, $promo, $specialite, $bio]);
+  $stmt = $pdo->prepare("INSERT INTO utilisateurs (prenom, nom, email, password, promo, specialite, bio, avatar) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+  $stmt->execute([$prenom, $nom, $email, $hashedPassword, $promo, $specialite, $bio, $avatar]);
 
   // Redirection vers la page de connexion après inscription réussie
   header("Location: login.php");
@@ -84,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div>
             <label for="avatar">Photo de profil</label>
             <input type="file" id="avatar" name="avatar" accept="image/*">
-            <p class="form-hint">JPG ou PNG, 2 Mo maximum.</p>
+            <p class="form-hint">JPG, PNG, WEBP ou AVIF, 2 Mo maximum.</p>
           </div>
         </div>
 
