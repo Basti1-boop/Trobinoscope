@@ -10,15 +10,15 @@
 <body>
 
   <nav>
-    <a href="index.html" class="nav-logo">trombi<span>.</span></a>
+    <a href="index.php" class="nav-logo">trombi<span>.</span></a>
     <button class="nav-toggle" aria-label="Ouvrir le menu">
       <span></span>
       <span></span>
       <span></span>
     </button>
     <ul class="nav-links">
-      <li><a href="index.html">Accueil</a></li>
-      <li><a href="profil.html">Mon profil</a></li>
+      <li><a href="index.php">Accueil</a></li>
+      <li><a href="profil.php">Mon profil</a></li>
       <li><a href="logout.php">Déconnexion</a></li>
     </ul>
   </nav>
@@ -41,7 +41,7 @@
         <div class="bio">Passionnée par le développement front-end et les interfaces accessibles. Je cherche un stage pour juin 2025.</div>
       </div>
       <div class="profile-actions">
-        <a href="edit-profil.html" class="btn btn-secondary btn-sm">Modifier le profil</a>
+        <a href="edit-profil.php" class="btn btn-secondary btn-sm">Modifier le profil</a>
         <a href="logout.php" class="btn btn-danger btn-sm">Déconnexion</a>
       </div>
     </div>
@@ -67,20 +67,20 @@
           Je viens de finir mon projet de BUT1 sur les APIs REST. Si quelqu'un veut un retour croisé, n'hésitez pas !
         </div>
         <div class="post-actions">
-          <a href="edit-post.html" class="btn btn-secondary btn-sm">Modifier</a>
+          <a href="edit-post.php" class="btn btn-secondary btn-sm">Modifier</a>
           <a href="#" class="btn btn-danger btn-sm" data-confirm="Supprimer cette publication ?">Supprimer</a>
         </div>
 
         <div class="comment-list">
           <div class="comment">
             <div class="comment-author">
-              <a href="profil.html">Lucas Bernard</a>
+              <a href="profil.php">Lucas Bernard</a>
             </div>
             <div class="comment-text">Super ! Je suis partant pour un échange de code review.</div>
           </div>
           <div class="comment">
             <div class="comment-author">
-              <a href="profil.html">Sofia Dupont</a>
+              <a href="profil.php">Sofia Dupont</a>
             </div>
             <div class="comment-text">Moi aussi, tu peux regarder le mien en échange ?</div>
           </div>
@@ -101,14 +101,14 @@
           Quelqu'un a des ressources sur Docker pour débutants ? Je commence à m'y mettre sérieusement.
         </div>
         <div class="post-actions">
-          <a href="edit-post.html" class="btn btn-secondary btn-sm">Modifier</a>
+          <a href="edit-post.php" class="btn btn-secondary btn-sm">Modifier</a>
           <a href="#" class="btn btn-danger btn-sm" data-confirm="Supprimer cette publication ?">Supprimer</a>
         </div>
 
         <div class="comment-list">
           <div class="comment">
             <div class="comment-author">
-              <a href="profil.html">Karim Ndiaye</a>
+              <a href="profil.php">Karim Ndiaye</a>
             </div>
             <div class="comment-text">La doc officielle de Docker est vraiment bien faite pour les débutants.</div>
           </div>

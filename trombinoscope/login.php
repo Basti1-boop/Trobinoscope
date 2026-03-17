@@ -10,15 +10,15 @@
 <body>
 
   <nav>
-    <a href="index.html" class="nav-logo">trombi<span>.</span></a>
+    <a href="index.php" class="nav-logo">trombi<span>.</span></a>
     <button class="nav-toggle" aria-label="Ouvrir le menu">
       <span></span>
       <span></span>
       <span></span>
     </button>
     <ul class="nav-links">
-      <li><a href="index.html">Accueil</a></li>
-      <li><a href="register.html" class="btn-nav">Inscription</a></li>
+      <li><a href="index.php">Accueil</a></li>
+      <li><a href="register.php" class="btn-nav">Inscription</a></li>
     </ul>
   </nav>
 
@@ -54,7 +54,7 @@
       </form>
 
       <div class="form-footer">
-        Pas encore de compte ? <a href="register.html">S'inscrire</a>
+        Pas encore de compte ? <a href="register.php">S'inscrire</a>
       </div>
     </div>
   </div>

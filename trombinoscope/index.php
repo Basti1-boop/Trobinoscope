@@ -12,7 +12,7 @@
 <body>
 
   <nav>
-    <a href="index.html" class="nav-logo">trombi<span>.</span></a>
+    <a href="index.php" class="nav-logo">trombi<span>.</span></a>
     <button class="nav-toggle" aria-label="Ouvrir le menu">
       <span></span>
       <span></span>
@@ -30,7 +30,7 @@
     <div class="hero">
       <h1>Le trombinoscope<br>de <em>votre promo <u>B1</u></em></h1>
       <p>Retrouvez tous vos camarades, partagez vos publications et échangez des commentaires.</p>
-      <a href="register.html" class="btn btn-primary btn-inline">Rejoindre la promo</a>
+      <a href="register.php" class="btn btn-primary btn-inline">Rejoindre la promo</a>
     </div>
 
     <div class="flash flash-success">

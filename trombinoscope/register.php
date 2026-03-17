@@ -45,7 +45,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $avatarTmpPath = $_FILES['avatar']['tmp_name'];
     $avatarOriginalName = $_FILES['avatar']['name'];
     $avatarSize = (int) $_FILES['avatar']['size'];
-    $avatarMimeType = mime_content_type($avatarTmpPath);
+    $avatarMimeType = null;
+
+    if (function_exists('mime_content_type')) {
+      $avatarMimeType = mime_content_type($avatarTmpPath);
+    } elseif (function_exists('finfo_open')) {
+      $finfo = finfo_open(FILEINFO_MIME_TYPE);
+      if ($finfo !== false) {
+        $avatarMimeType = finfo_file($finfo, $avatarTmpPath);
+        finfo_close($finfo);
+      }
+    }
+
+    // Fallback si les fonctions MIME ne sont pas disponibles sur l'environnement.
+    if (!$avatarMimeType) {
+      $extension = strtolower(pathinfo($avatarOriginalName, PATHINFO_EXTENSION));
+      $mimeByExtension = [
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'webp' => 'image/webp',
+        'avif' => 'image/avif',
+      ];
+      $avatarMimeType = $mimeByExtension[$extension] ?? '';
+    }
 
     if ($avatarSize <= $maxFileSize && in_array($avatarMimeType, $allowedMimeTypes, true)) {
       $uploadsDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads';
@@ -89,15 +112,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 
   <nav>
-    <a href="index.html" class="nav-logo">trombi<span>.</span></a>
+    <a href="index.php" class="nav-logo">trombi<span>.</span></a>
     <button class="nav-toggle" aria-label="Ouvrir le menu">
       <span></span>
       <span></span>
       <span></span>
     </button>
     <ul class="nav-links">
-      <li><a href="index.html">Accueil</a></li>
-      <li><a href="login.html" class="btn-nav">Connexion</a></li>
+      <li><a href="index.php">Accueil</a></li>
+      <li><a href="login.php" class="btn-nav">Connexion</a></li>
     </ul>
   </nav>
 
@@ -170,7 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </form>
 
       <div class="form-footer">
-        Déjà inscrit ? <a href="login.html">Se connecter</a>
+        Déjà inscrit ? <a href="login.php">Se connecter</a>
       </div>
     </div>
   </div>

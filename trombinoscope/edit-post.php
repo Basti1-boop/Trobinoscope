@@ -10,15 +10,15 @@
 <body>
 
   <nav>
-    <a href="index.html" class="nav-logo">trombi<span>.</span></a>
+    <a href="index.php" class="nav-logo">trombi<span>.</span></a>
     <button class="nav-toggle" aria-label="Ouvrir le menu">
       <span></span>
       <span></span>
       <span></span>
     </button>
     <ul class="nav-links">
-      <li><a href="index.html">Accueil</a></li>
-      <li><a href="profil.html">Mon profil</a></li>
+      <li><a href="index.php">Accueil</a></li>
+      <li><a href="profil.php">Mon profil</a></li>
       <li><a href="logout.php">Déconnexion</a></li>
     </ul>
   </nav>
@@ -43,7 +43,7 @@
       </form>
 
       <div class="form-footer">
-        <a href="profil.html">Annuler</a>
+        <a href="profil.php">Annuler</a>
       </div>
     </div>
   </div>
