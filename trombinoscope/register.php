@@ -1,5 +1,49 @@
+<?php
+session_start();
+require_once 'config.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $prenom = trim($_POST['prenom']);
+  $nom = trim($_POST['nom']);
+  $email = trim($_POST['email']);
+  $password = $_POST['password'];
+  $promo = $_POST['promo'];
+  $specialite = trim($_POST['specialite']);
+  $bio = trim($_POST['bio']);
+
+  // Vérification des champs obligatoires
+  if (empty($prenom) || empty($nom) || empty($email) || empty($password) || empty($promo)) {
+    $_SESSION['flash_error'] = "Veuillez remplir tous les champs obligatoires.";
+    header("Location: register.php");
+    exit();
+  }
+
+  // Vérification de l'unicité de l'email
+  $stmt = $pdo->prepare("SELECT id FROM utilisateurs WHERE email = ?");
+  $stmt->execute([$email]);
+  if ($stmt->fetch()) {
+    $_SESSION['flash_error'] = "L'adresse email est déjà utilisée. Veuillez en choisir une autre.";
+    header("Location: register.php");
+    exit();
+  }
+
+  // Hachage du mot de passe
+  $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+  // Insertion dans la base de données
+  $stmt = $pdo->prepare("INSERT INTO utilisateurs (prenom, nom, email, password, promo, specialite, bio) VALUES (?, ?, ?, ?, ?, ?, ?)");
+  $stmt->execute([$prenom, $nom, $email, $hashedPassword, $promo, $specialite, $bio]);
+
+  // Redirection vers la page de connexion après inscription réussie
+  header("Location: login.php");
+  exit();
+}
+
+?>
+
+
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +51,7 @@
   <link rel="stylesheet" href="./assets/css/style.css">
   <script src="./assets/js/script.js" defer></script>
 </head>
+
 <body>
 
   <nav>
@@ -103,4 +148,5 @@
   </footer>
 
 </body>
+
 </html>
