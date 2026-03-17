@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
   <link rel="stylesheet" href="./assets/css/style.css">
   <script src="./assets/js/script.js" defer></script>
 </head>
+
 <body>
 
   <nav>
@@ -17,9 +19,9 @@
       <span></span>
     </button>
     <ul class="nav-links">
-      <li><a href="index.html">Accueil</a></li>
-      <li><a href="register.html">Inscription</a></li>
-      <li><a href="login.html" class="btn-nav">Connexion</a></li>
+      <li><a href="index.php">Accueil</a></li>
+      <li><a href="register.php">Inscription</a></li>
+      <li><a href="login.php" class="btn-nav">Connexion</a></li>
     </ul>
   </nav>
 
@@ -45,7 +47,7 @@
     <div class="trombi-grid">
 
       <div class="trombi-card card">
-        <a href="profil.html">
+        <a href="profil.php">
           <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Alice&backgroundColor=b6e3f4" alt="Alice Martin">
           <div class="card-body">
             <div class="card-name">Alice Martin</div>
@@ -56,7 +58,7 @@
       </div>
 
       <div class="trombi-card card">
-        <a href="profil.html">
+        <a href="profil.php">
           <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Lucas&backgroundColor=ffdfbf" alt="Lucas Bernard">
           <div class="card-body">
             <div class="card-name">Lucas Bernard</div>
@@ -67,7 +69,7 @@
       </div>
 
       <div class="trombi-card card">
-        <a href="profil.html">
+        <a href="profil.php">
           <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Sofia&backgroundColor=d1f4d1" alt="Sofia Dupont">
           <div class="card-body">
             <div class="card-name">Sofia Dupont</div>
@@ -78,7 +80,7 @@
       </div>
 
       <div class="trombi-card card">
-        <a href="profil.html">
+        <a href="profil.php">
           <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Karim&backgroundColor=ffd5dc" alt="Karim Ndiaye">
           <div class="card-body">
             <div class="card-name">Karim Ndiaye</div>
@@ -89,7 +91,7 @@
       </div>
 
       <div class="trombi-card card">
-        <a href="profil.html">
+        <a href="profil.php">
           <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Emma&backgroundColor=e8d5ff" alt="Emma Leroy">
           <div class="card-body">
             <div class="card-name">Emma Leroy</div>
@@ -100,7 +102,7 @@
       </div>
 
       <div class="trombi-card card">
-        <a href="profil.html">
+        <a href="profil.php">
           <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Noah&backgroundColor=fff3b0" alt="Noah Girard">
           <div class="card-body">
             <div class="card-name">Noah Girard</div>
@@ -111,7 +113,7 @@
       </div>
 
       <div class="trombi-card card">
-        <a href="profil.html">
+        <a href="profil.php">
           <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Yasmine&backgroundColor=c0f0f0" alt="Yasmine Benali">
           <div class="card-body">
             <div class="card-name">Yasmine Benali</div>
@@ -122,7 +124,7 @@
       </div>
 
       <div class="trombi-card card">
-        <a href="profil.html">
+        <a href="profil.php">
           <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Tom&backgroundColor=ffd5b0" alt="Tom Faure">
           <div class="card-body">
             <div class="card-name">Tom Faure</div>
@@ -142,4 +144,5 @@
   </footer>
 
 </body>
+
 </html>
