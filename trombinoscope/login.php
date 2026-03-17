@@ -8,7 +8,7 @@ Lors de la soumission du formulaire :
     - Verifier que les champs sont remplis
     - Verifier que l'email est au bon format
     - Le mot de passe doit comporter au moins 6 caracteres
-    - Verifier que l'email existe dans la base
+    - Verifier que l'email existe dans la base (table utilisateurs)
     - Si ok, connecter l'utilisateur
     - Afficher un message d'erreur en fonction du resultat
 */
@@ -17,6 +17,8 @@ Lors de la soumission du formulaire :
 $errors = [];
 $email = '';
 $remember = false;
+$successMessage = '';
+$loginSuccess = false;
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -39,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Si aucune erreur verifier l'utilisateur
     if (empty($errors)) {
-        $emailTab = "SELECT id, nom, email, password FROM `users` WHERE email = '$email' LIMIT 1";
+        $emailTab = "SELECT id, prenom, nom, email, password FROM `utilisateurs` WHERE email = '$email' LIMIT 1";
         $res = $pdo->query($emailTab);
 
 
@@ -54,9 +56,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 session_regenerate_id(true);
                 $_SESSION['user_id'] = $user['id'];
+                $_SESSION['user_prenom'] = $user['prenom'];
                 $_SESSION['user_nom'] = $user['nom'];
-                header('Location: index.php');
-                exit;
+                $loginSuccess = true;
+                $successMessage = "Connexion reussie. Redirection en cours...";
             }
         }
     }
@@ -72,6 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trombinoscope — Connexion</title>
+    <?php if ($loginSuccess): ?>
+        <meta http-equiv="refresh" content="2;url=index.php">
+    <?php endif; ?>
     <link rel="stylesheet" href="./assets/css/style.css">
     <script src="./assets/js/script.js" defer></script>
 </head>
@@ -95,6 +101,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="container-sm">
 
+        <?php if ($successMessage !== ''): ?>
+            <div class="flash flash-success">
+                <?php echo htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8'); ?>
+            </div>
+        <?php endif; ?>
 
         <div class="form-card">
             <div class="form-title">Se connecter</div>
