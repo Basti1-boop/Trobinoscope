@@ -1,6 +1,13 @@
 <?php
 session_start();
 require_once 'config.php';
+
+$flashEmailExists = '';
+if (isset($_SESSION['flash_email_exists'])) {
+  $flashEmailExists = $_SESSION['flash_email_exists'];
+  unset($_SESSION['flash_email_exists']);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $prenom = trim($_POST['prenom']);
   $nom = trim($_POST['nom']);
@@ -21,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $stmt = $pdo->prepare("SELECT id FROM utilisateurs WHERE email = ?");
   $stmt->execute([$email]);
   if ($stmt->fetch()) {
-    $_SESSION['flash_error'] = "L'adresse email est déjà utilisée. Veuillez en choisir une autre.";
+    $_SESSION['flash_email_exists'] = "L'adresse email est déjà utilisée. Veuillez en choisir une autre.";
     header("Location: register.php");
     exit();
   }
@@ -126,9 +133,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <div class="container-sm">
 
-    <div class="flash flash-error">
-      L'adresse email est déjà utilisée. Veuillez en choisir une autre.
-    </div>
+    <?php if ($flashEmailExists !== ''): ?>
+      <div class="flash flash-error">
+        <?php echo htmlspecialchars($flashEmailExists, ENT_QUOTES, 'UTF-8'); ?>
+      </div>
+    <?php endif; ?>
 
     <div class="form-card">
       <div class="form-title">Créer un compte</div>
