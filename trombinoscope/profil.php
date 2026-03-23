@@ -408,7 +408,7 @@ if (isset($_SESSION['flash_success'])) {
           <?php if ($isOwner): ?>
             <div class="post-actions">
               <a href="edit-post.php?id=<?php echo $pubId; ?>" class="btn btn-secondary btn-sm">Modifier</a>
-              <a href="#" class="btn btn-danger btn-sm" data-confirm="Supprimer cette publication ?">Supprimer</a>
+              <a href="delete-post.php?id=<?php echo $pubId; ?>" class="btn btn-danger btn-sm" data-confirm="Supprimer cette publication ?">Supprimer</a>
             </div>
           <?php endif; ?>
 

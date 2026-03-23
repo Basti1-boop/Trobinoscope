@@ -7,7 +7,7 @@ require_once 'auth.php';
 require_once 'config.php';
 
 // Récupérer l'ID de la publication
-$post_id = intval($_GET['id'] ?? 0);
+$post_id = (int) ($_GET['id'] ?? 0);
 
 if ($post_id === 0) {
     $_SESSION['flash_error'] = "Publication introuvable.";
@@ -29,7 +29,7 @@ if (!$publication) {
 }
 
 // Vérifier que l'utilisateur est propriétaire de la publication
-if ($publication['utilisateur_id'] !== $_SESSION['user_id']) {
+if ((int) $publication['utilisateur_id'] !== (int) $_SESSION['user_id']) {
     $_SESSION['flash_error'] = "Vous n'avez pas le droit de supprimer cette publication.";
     header("Location: profil.php?id=" . $_SESSION['user_id']);
     exit();
