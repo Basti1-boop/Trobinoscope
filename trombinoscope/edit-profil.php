@@ -1,9 +1,173 @@
+<?php
+require_once 'auth.php';
+require_once 'config.php';
+
+$userId = (int) $_SESSION['user_id'];
+$errors = [];
+$successMessage = '';
+
+$stmt = $pdo->prepare("SELECT id, prenom, nom, email, promo, specialite, bio, avatar FROM utilisateurs WHERE id = ? LIMIT 1");
+$stmt->execute([$userId]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$user) {
+  header('Location: logout.php');
+  exit();
+}
+
+$prenom = $user['prenom'] ?? '';
+$nom = $user['nom'] ?? '';
+$email = $user['email'] ?? '';
+$promo = $user['promo'] ?? '';
+$specialite = $user['specialite'] ?? '';
+$bio = $user['bio'] ?? '';
+$avatar = $user['avatar'] ?? 'default.svg';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $postedId = (int) ($_POST['id'] ?? 0);
+  if ($postedId !== $userId) {
+    $_SESSION['flash_error'] = "Vous ne pouvez pas modifier un autre profil.";
+    header('Location: profil.php?id=' . $userId);
+    exit();
+  }
+
+  $prenom = trim($_POST['prenom'] ?? '');
+  $nom = trim($_POST['nom'] ?? '');
+  $email = trim($_POST['email'] ?? '');
+  $promo = trim($_POST['promo'] ?? '');
+  $specialite = trim($_POST['specialite'] ?? '');
+  $bio = trim($_POST['bio'] ?? '');
+  $password = $_POST['password'] ?? '';
+
+  if ($prenom === '' || $nom === '' || $email === '' || $promo === '') {
+    $errors[] = 'Veuillez remplir tous les champs obligatoires.';
+  } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    $errors[] = 'Adresse email invalide.';
+  }
+
+  if ($email !== ($user['email'] ?? '')) {
+    $stmt = $pdo->prepare("SELECT id FROM utilisateurs WHERE email = ? AND id <> ? LIMIT 1");
+    $stmt->execute([$email, $userId]);
+    if ($stmt->fetch()) {
+      $errors[] = 'Cette adresse email est deja utilisee.';
+    }
+  }
+
+  $newAvatar = $avatar;
+  if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+    $maxFileSize = 2097152;
+    $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+    $avatarTmpPath = $_FILES['avatar']['tmp_name'];
+    $avatarOriginalName = $_FILES['avatar']['name'];
+    $avatarSize = (int) $_FILES['avatar']['size'];
+
+    $avatarMimeType = null;
+    if (function_exists('mime_content_type')) {
+      $avatarMimeType = mime_content_type($avatarTmpPath);
+    } elseif (function_exists('finfo_open')) {
+      $finfo = finfo_open(FILEINFO_MIME_TYPE);
+      if ($finfo !== false) {
+        $avatarMimeType = finfo_file($finfo, $avatarTmpPath);
+        finfo_close($finfo);
+      }
+    }
+
+    if (!$avatarMimeType) {
+      $extension = strtolower(pathinfo($avatarOriginalName, PATHINFO_EXTENSION));
+      $mimeByExtension = [
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'webp' => 'image/webp',
+        'avif' => 'image/avif',
+      ];
+      $avatarMimeType = $mimeByExtension[$extension] ?? '';
+    }
+
+    if ($avatarSize <= $maxFileSize && in_array($avatarMimeType, $allowedMimeTypes, true)) {
+      $uploadsDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads';
+      if (!is_dir($uploadsDir)) {
+        mkdir($uploadsDir, 0755, true);
+      }
+
+      $extension = strtolower(pathinfo($avatarOriginalName, PATHINFO_EXTENSION));
+      $uniqueAvatarName = uniqid('avatar_', true) . ($extension ? '.' . $extension : '');
+      $destination = $uploadsDir . DIRECTORY_SEPARATOR . $uniqueAvatarName;
+
+      if (move_uploaded_file($avatarTmpPath, $destination)) {
+        $newAvatar = $uniqueAvatarName;
+      }
+    }
+  }
+
+  if (empty($errors)) {
+    $fields = [];
+    $values = [];
+
+    if ($prenom !== ($user['prenom'] ?? '')) {
+      $fields[] = 'prenom = ?';
+      $values[] = $prenom;
+    }
+    if ($nom !== ($user['nom'] ?? '')) {
+      $fields[] = 'nom = ?';
+      $values[] = $nom;
+    }
+    if ($email !== ($user['email'] ?? '')) {
+      $fields[] = 'email = ?';
+      $values[] = $email;
+    }
+    if ($promo !== ($user['promo'] ?? '')) {
+      $fields[] = 'promo = ?';
+      $values[] = $promo;
+    }
+    if ($specialite !== ($user['specialite'] ?? '')) {
+      $fields[] = 'specialite = ?';
+      $values[] = $specialite;
+    }
+    if ($bio !== ($user['bio'] ?? '')) {
+      $fields[] = 'bio = ?';
+      $values[] = $bio;
+    }
+    if ($newAvatar !== ($user['avatar'] ?? '')) {
+      $fields[] = 'avatar = ?';
+      $values[] = $newAvatar;
+    }
+    if ($password !== '') {
+      $fields[] = 'password = ?';
+      $values[] = password_hash($password, PASSWORD_DEFAULT);
+    }
+
+    if (!empty($fields)) {
+      $values[] = $userId;
+      $sql = "UPDATE utilisateurs SET " . implode(', ', $fields) . " WHERE id = ?";
+      $stmt = $pdo->prepare($sql);
+      $stmt->execute($values);
+    }
+
+    if ($prenom !== ($user['prenom'] ?? '')) {
+      $_SESSION['user_prenom'] = $prenom;
+    }
+    if ($nom !== ($user['nom'] ?? '')) {
+      $_SESSION['user_nom'] = $nom;
+    }
+
+    $_SESSION['flash_success'] = 'Votre profil a bien ete mis a jour.';
+    header('Location: profil.php?id=' . $userId);
+    exit();
+  }
+
+  $avatar = $newAvatar;
+}
+
+$avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' . $avatar;
+?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trombinoscope — Modifier mon profil</title>
+  <title>Trombinoscope � Modifier mon profil</title>
   <link rel="stylesheet" href="./assets/css/style.css">
   <script src="./assets/js/script.js" defer></script>
 </head>
@@ -18,22 +182,29 @@
     </button>
     <ul class="nav-links">
       <li><a href="index.php">Accueil</a></li>
-      <li><a href="profil.php">Mon profil</a></li>
-      <li><a href="logout.php">Déconnexion</a></li>
+      <li><a href="profil.php?id=<?php echo (int) $_SESSION['user_id']; ?>">Mon profil</a></li>
+      <li><a href="logout.php" class="btn-nav">Deconnexion</a></li>
     </ul>
   </nav>
 
   <div class="container-sm">
+
+    <?php if (!empty($errors)): ?>
+      <div class="flash flash-error">
+        <?php echo htmlspecialchars(implode(' ', $errors), ENT_QUOTES, 'UTF-8'); ?>
+      </div>
+    <?php endif; ?>
 
     <div class="form-card">
       <div class="form-title">Modifier mon profil</div>
       <div class="form-subtitle">Ces informations sont visibles par tous les membres.</div>
 
       <form action="" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="id" value="<?php echo (int) $userId; ?>">
 
         <div class="avatar-upload">
           <img
-            src="https://api.dicebear.com/7.x/personas/svg?seed=Alice&backgroundColor=b6e3f4"
+            src="<?php echo htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8'); ?>"
             alt="Avatar actuel"
             id="preview-avatar"
           >
@@ -47,39 +218,39 @@
         <hr class="divider">
 
         <div class="form-group">
-          <label for="prenom">Prénom</label>
-          <input type="text" id="prenom" name="prenom" value="Alice" required>
+          <label for="prenom">Prenom</label>
+          <input type="text" id="prenom" name="prenom" value="<?php echo htmlspecialchars($prenom, ENT_QUOTES, 'UTF-8'); ?>" required>
         </div>
 
         <div class="form-group">
           <label for="nom">Nom</label>
-          <input type="text" id="nom" name="nom" value="Martin" required>
+          <input type="text" id="nom" name="nom" value="<?php echo htmlspecialchars($nom, ENT_QUOTES, 'UTF-8'); ?>" required>
         </div>
 
         <div class="form-group">
-          <label for="specialite">Spécialité</label>
-          <input type="text" id="specialite" name="specialite" value="Développeuse Web">
+          <label for="specialite">Specialite</label>
+          <input type="text" id="specialite" name="specialite" value="<?php echo htmlspecialchars($specialite, ENT_QUOTES, 'UTF-8'); ?>">
         </div>
 
         <div class="form-group">
           <label for="promo">Promotion</label>
-          <select id="promo" name="promo">
-            <option value="BUT1 2024" selected>BUT1 2024</option>
-            <option value="BUT2 2023">BUT2 2023</option>
-            <option value="BUT3 2022">BUT3 2022</option>
+          <select id="promo" name="promo" required>
+            <option value="BUT1 2024" <?php echo $promo === 'BUT1 2024' ? 'selected' : ''; ?>>BUT1 2024</option>
+            <option value="BUT2 2023" <?php echo $promo === 'BUT2 2023' ? 'selected' : ''; ?>>BUT2 2023</option>
+            <option value="BUT3 2022" <?php echo $promo === 'BUT3 2022' ? 'selected' : ''; ?>>BUT3 2022</option>
           </select>
         </div>
 
         <div class="form-group">
           <label for="bio">Bio</label>
-          <textarea id="bio" name="bio">Passionnée par le développement front-end et les interfaces accessibles. Je cherche un stage pour juin 2025.</textarea>
+          <textarea id="bio" name="bio"><?php echo htmlspecialchars($bio, ENT_QUOTES, 'UTF-8'); ?></textarea>
         </div>
 
         <hr class="divider">
 
         <div class="form-group">
           <label for="email">Adresse email</label>
-          <input type="email" id="email" name="email" value="alice@exemple.fr" required>
+          <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($email, ENT_QUOTES, 'UTF-8'); ?>" required>
         </div>
 
         <div class="form-group">
@@ -93,7 +264,7 @@
       </form>
 
       <div class="form-footer">
-        <a href="profil.php">Annuler et retourner au profil</a>
+        <a href="profil.php?id=<?php echo (int) $_SESSION['user_id']; ?>">Annuler et retourner au profil</a>
       </div>
     </div>
   </div>
