@@ -270,10 +270,10 @@ if ($isFakeProfile) {
 
   $stmt = $pdo->prepare(
     "SELECT p.id, p.utilisateur_id, p.contenu, p.created_at, u.prenom, u.nom " .
-    "FROM publications p " .
-    "JOIN utilisateurs u ON u.id = p.utilisateur_id " .
-    "WHERE p.utilisateur_id = ? " .
-    "ORDER BY p.created_at DESC"
+      "FROM publications p " .
+      "JOIN utilisateurs u ON u.id = p.utilisateur_id " .
+      "WHERE p.utilisateur_id = ? " .
+      "ORDER BY p.created_at DESC"
   );
   $stmt->execute([$profileId]);
   $publications = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -281,11 +281,11 @@ if ($isFakeProfile) {
   $commentsByPublication = [];
   $stmt = $pdo->prepare(
     "SELECT c.id, c.publication_id, c.utilisateur_id, c.contenu, c.created_at, u.prenom, u.nom " .
-    "FROM commentaires c " .
-    "JOIN utilisateurs u ON u.id = c.utilisateur_id " .
-    "JOIN publications p ON p.id = c.publication_id " .
-    "WHERE p.utilisateur_id = ? " .
-    "ORDER BY c.created_at ASC"
+      "FROM commentaires c " .
+      "JOIN utilisateurs u ON u.id = c.utilisateur_id " .
+      "JOIN publications p ON p.id = c.publication_id " .
+      "WHERE p.utilisateur_id = ? " .
+      "ORDER BY c.created_at ASC"
   );
   $stmt->execute([$profileId]);
   $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -349,8 +349,7 @@ if (isset($_SESSION['flash_success'])) {
       <img
         class="profile-avatar"
         src="<?php echo htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8'); ?>"
-        alt="<?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?>"
-      >
+        alt="<?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?>">
       <div class="profile-info">
         <h1><?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?></h1>
         <?php if ($specialite !== '' || $promo !== ''): ?>
@@ -436,9 +435,9 @@ if (isset($_SESSION['flash_success'])) {
           </div>
 
           <?php if ($isLoggedIn): ?>
-            <form action="" method="POST" class="comment-form">
+            <form action="comment.php" method="POST" class="comment-form">
               <input type="hidden" name="post_id" value="<?php echo $pubId; ?>">
-              <input type="text" name="contenu" placeholder="Ajouter un commentaire...">
+              <input type="text" name="contenu" placeholder="Ajouter un commentaire..." required>
               <button type="submit">Envoyer</button>
             </form>
           <?php endif; ?>
