@@ -60,9 +60,11 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <a href="register.php" class="btn btn-primary btn-inline">Rejoindre la promo</a>
     </div>
 
-    <div class="flash flash-success">
-      Bienvenue sur le trombinoscope ! Inscrivez-vous pour rejoindre la promo.
-    </div>
+    <?php if (!$isLoggedIn): ?>
+      <div class="flash flash-success">
+        Bienvenue sur le trombinoscope ! Inscrivez-vous pour rejoindre la promo.
+      </div>
+    <?php endif; ?>
 
     <div class="filter-bar">
       <?php $isAll = ($promo === ''); ?>
