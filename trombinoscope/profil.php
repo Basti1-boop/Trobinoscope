@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
   <link rel="stylesheet" href="./assets/css/style.css">
   <script src="./assets/js/script.js" defer></script>
 </head>
+
 <body>
 
   <nav>
@@ -33,8 +35,7 @@
       <img
         class="profile-avatar"
         src="https://api.dicebear.com/7.x/personas/svg?seed=Alice&backgroundColor=b6e3f4"
-        alt="Alice Martin"
-      >
+        alt="Alice Martin">
       <div class="profile-info">
         <h1>Alice Martin</h1>
         <div class="role">Développeuse Web — BUT1 2024</div>
@@ -49,7 +50,7 @@
     <div class="section-title">Publications</div>
 
     <div class="form-card form-card-post">
-      <form action="" method="POST">
+      <form action="post.php" method="POST">
         <div class="form-group">
           <textarea name="contenu" placeholder="Partagez quelque chose avec la promo..." rows="3"></textarea>
         </div>
@@ -131,4 +132,5 @@
   </footer>
 
 </body>
+
 </html>
