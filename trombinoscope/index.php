@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 $isLoggedIn = isset($_SESSION['user_id']);
 
@@ -17,6 +17,7 @@ $sql .= " ORDER BY nom ASC, prenom ASC";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 
 <!DOCTYPE html>
@@ -25,7 +26,7 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trombinoscope — Accueil</title>
+  <title>Trombinoscope â€” Accueil</title>
   <link rel="stylesheet" href="./assets/css/style.css">
   <script src="./assets/js/script.js" defer></script>
 </head>
@@ -43,7 +44,7 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <li><a href="index.php">Accueil</a></li>
       <?php if ($isLoggedIn): ?>
         <li><a href="profil.php">Mon profil</a></li>
-        <li><a href="logout.php" class="btn-nav">Déconnexion</a></li>
+        <li><a href="logout.php" class="btn-nav">DÃ©connexion</a></li>
       <?php else: ?>
         <li><a href="register.php">Inscription</a></li>
         <li><a href="login.php" class="btn-nav">Connexion</a></li>
@@ -55,7 +56,7 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <div class="hero">
       <h1>Le trombinoscope<br>de <em>votre promo <u>B1</u></em></h1>
-      <p>Retrouvez tous vos camarades, partagez vos publications et échangez des commentaires.</p>
+      <p>Retrouvez tous vos camarades, partagez vos publications et Ã©changez des commentaires.</p>
       <a href="register.php" class="btn btn-primary btn-inline">Rejoindre la promo</a>
     </div>
 
@@ -70,16 +71,15 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <a href="index.php?promo=BUT2+2023" class="filter-btn <?php echo $promo === 'BUT2 2023' ? 'active' : ''; ?>">BUT2 2023</a>
       <a href="index.php?promo=BUT3+2022" class="filter-btn <?php echo $promo === 'BUT3 2022' ? 'active' : ''; ?>">BUT3 2022</a>
     </div>
-
     <div class="trombi-grid">
 
       <?php if ($showAll || $promo === 'BUT1 2024'): ?>
         <div class="trombi-card card">
-          <a href="profil.php">
+          <a href="profil.php?fake=alice">
             <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Alice&backgroundColor=b6e3f4" alt="Alice Martin">
             <div class="card-body">
               <div class="card-name">Alice Martin</div>
-              <div class="card-role">Développeuse Web</div>
+              <div class="card-role">DÃ©veloppeuse Web</div>
               <span class="card-promo">BUT1 2024</span>
             </div>
           </a>
@@ -88,7 +88,7 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
       <?php if ($showAll || $promo === 'BUT1 2024'): ?>
         <div class="trombi-card card">
-          <a href="profil.php">
+          <a href="profil.php?fake=lucas">
             <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Lucas&backgroundColor=ffdfbf" alt="Lucas Bernard">
             <div class="card-body">
               <div class="card-name">Lucas Bernard</div>
@@ -101,7 +101,7 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
       <?php if ($showAll || $promo === 'BUT2 2023'): ?>
         <div class="trombi-card card">
-          <a href="profil.php">
+          <a href="profil.php?fake=sofia">
             <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Sofia&backgroundColor=d1f4d1" alt="Sofia Dupont">
             <div class="card-body">
               <div class="card-name">Sofia Dupont</div>
@@ -114,7 +114,7 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
       <?php if ($showAll || $promo === 'BUT2 2023'): ?>
         <div class="trombi-card card">
-          <a href="profil.php">
+          <a href="profil.php?fake=karim">
             <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Karim&backgroundColor=ffd5dc" alt="Karim Ndiaye">
             <div class="card-body">
               <div class="card-name">Karim Ndiaye</div>
@@ -127,7 +127,7 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
       <?php if ($showAll || $promo === 'BUT3 2022'): ?>
         <div class="trombi-card card">
-          <a href="profil.php">
+          <a href="profil.php?fake=emma">
             <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Emma&backgroundColor=e8d5ff" alt="Emma Leroy">
             <div class="card-body">
               <div class="card-name">Emma Leroy</div>
@@ -140,11 +140,11 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
       <?php if ($showAll || $promo === 'BUT3 2022'): ?>
         <div class="trombi-card card">
-          <a href="profil.php">
+          <a href="profil.php?fake=noah">
             <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Noah&backgroundColor=fff3b0" alt="Noah Girard">
             <div class="card-body">
               <div class="card-name">Noah Girard</div>
-              <div class="card-role">Sécurité Réseau</div>
+              <div class="card-role">SÃ©curitÃ© RÃ©seau</div>
               <span class="card-promo">BUT3 2022</span>
             </div>
           </a>
@@ -153,11 +153,11 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
       <?php if ($showAll || $promo === 'BUT1 2024'): ?>
         <div class="trombi-card card">
-          <a href="profil.php">
+          <a href="profil.php?fake=yasmine">
             <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Yasmine&backgroundColor=c0f0f0" alt="Yasmine Benali">
             <div class="card-body">
               <div class="card-name">Yasmine Benali</div>
-              <div class="card-role">Développeuse Mobile</div>
+              <div class="card-role">DÃ©veloppeuse Mobile</div>
               <span class="card-promo">BUT1 2024</span>
             </div>
           </a>
@@ -166,7 +166,7 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
       <?php if ($showAll || $promo === 'BUT2 2023'): ?>
         <div class="trombi-card card">
-          <a href="profil.php">
+          <a href="profil.php?fake=tom">
             <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Tom&backgroundColor=ffd5b0" alt="Tom Faure">
             <div class="card-body">
               <div class="card-name">Tom Faure</div>
@@ -177,6 +177,11 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
       <?php endif; ?>
 
+<?php if (empty($utilisateurs)): ?>
+        <div class="flash">
+          Aucun membre ne correspond Ã  ce filtre pour le moment.
+        </div>
+      <?php endif; ?>
       <?php foreach ($utilisateurs as $utilisateur): ?>
         <?php
         $id = (int) $utilisateur['id'];
@@ -185,7 +190,7 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $specialite = $utilisateur['specialite'] ?? '';
         $promo = $utilisateur['promo'] ?? '';
         $avatar = $utilisateur['avatar'] ?? 'default.svg';
-        $avatarPath = './uploads/' . $avatar;
+        $avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' . $avatar;
         $fullName = trim($prenom . ' ' . $nom);
         ?>
         <div class="trombi-card card">
@@ -212,3 +217,5 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </body>
 
 </html>
+
+
