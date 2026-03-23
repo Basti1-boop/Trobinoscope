@@ -2,6 +2,10 @@
 session_start();
 require_once 'config.php';
 
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 $isLoggedIn = isset($_SESSION['user_id']);
 $profileId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $fakeKey = strtolower(trim($_GET['fake'] ?? ''));
@@ -303,6 +307,11 @@ if (isset($_SESSION['flash_success'])) {
   $flashSuccess = $_SESSION['flash_success'];
   unset($_SESSION['flash_success']);
 }
+$flashError = '';
+if (isset($_SESSION['flash_error'])) {
+  $flashError = $_SESSION['flash_error'];
+  unset($_SESSION['flash_error']);
+}
 ?>
 
 <!DOCTYPE html>
@@ -344,6 +353,23 @@ if (isset($_SESSION['flash_success'])) {
         <?php echo htmlspecialchars($flashSuccess, ENT_QUOTES, 'UTF-8'); ?>
       </div>
     <?php endif; ?>
+    <?php if ($flashError !== ''): ?>
+      <div class="flash flash-error">
+        <?php echo htmlspecialchars($flashError, ENT_QUOTES, 'UTF-8'); ?>
+      </div>
+    <?php endif; ?>
+
+    <?php
+    $debug = '';
+    if (isset($_SESSION['debug'])) {
+      $debug = $_SESSION['debug'];
+      unset($_SESSION['debug']);
+    }
+    if ($debug !== ''): ?>
+      <div class="flash">
+        Debug: <?php echo htmlspecialchars($debug, ENT_QUOTES, 'UTF-8'); ?>
+      </div>
+    <?php endif; ?>
 
     <div class="profile-header">
       <img
@@ -372,6 +398,7 @@ if (isset($_SESSION['flash_success'])) {
     <?php if ($isOwnProfile): ?>
       <div class="form-card form-card-post">
         <form action="post.php" method="POST">
+          <?php echo csrf_field(); ?>
           <div class="form-group">
             <textarea name="contenu" placeholder="Partagez quelque chose avec la promo..." rows="3"></textarea>
           </div>
@@ -408,7 +435,11 @@ if (isset($_SESSION['flash_success'])) {
           <?php if ($isOwner): ?>
             <div class="post-actions">
               <a href="edit-post.php?id=<?php echo $pubId; ?>" class="btn btn-secondary btn-sm">Modifier</a>
-              <a href="delete-post.php?id=<?php echo $pubId; ?>" class="btn btn-danger btn-sm" data-confirm="Supprimer cette publication ?">Supprimer</a>
+              <form action="delete-post.php" method="POST" class="inline-form" onsubmit="return confirm('Supprimer cette publication ?');">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="id" value="<?php echo $pubId; ?>">
+                <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+              </form>
             </div>
           <?php endif; ?>
 
@@ -436,6 +467,7 @@ if (isset($_SESSION['flash_success'])) {
 
           <?php if ($isLoggedIn): ?>
             <form action="comment.php" method="POST" class="comment-form">
+              <?php echo csrf_field(); ?>
               <input type="hidden" name="post_id" value="<?php echo $pubId; ?>">
               <input type="text" name="contenu" placeholder="Ajouter un commentaire..." required>
               <button type="submit">Envoyer</button>

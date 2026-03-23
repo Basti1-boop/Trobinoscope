@@ -1,10 +1,9 @@
-<?php
+﻿<?php
 require_once 'auth.php';
 require_once 'config.php';
 
 $userId = (int) $_SESSION['user_id'];
 $errors = [];
-$successMessage = '';
 
 $stmt = $pdo->prepare("SELECT id, prenom, nom, email, promo, specialite, bio, avatar FROM utilisateurs WHERE id = ? LIMIT 1");
 $stmt->execute([$userId]);
@@ -24,6 +23,12 @@ $bio = $user['bio'] ?? '';
 $avatar = $user['avatar'] ?? 'default.svg';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  if (!csrf_validate()) {
+    $_SESSION['flash_error'] = 'Jeton de securite invalide. Merci de reessayer.';
+    header('Location: profil.php?id=' . $userId);
+    exit();
+  }
+
   $postedId = (int) ($_POST['id'] ?? 0);
   if ($postedId !== $userId) {
     $_SESSION['flash_error'] = "Vous ne pouvez pas modifier un autre profil.";
@@ -167,7 +172,7 @@ $avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' .
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trombinoscope � Modifier mon profil</title>
+  <title>Trombinoscope — Modifier mon profil</title>
   <link rel="stylesheet" href="./assets/css/style.css">
   <script src="./assets/js/script.js" defer></script>
 </head>
@@ -200,6 +205,7 @@ $avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' .
       <div class="form-subtitle">Ces informations sont visibles par tous les membres.</div>
 
       <form action="" method="POST" enctype="multipart/form-data">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="id" value="<?php echo (int) $userId; ?>">
 
         <div class="avatar-upload">

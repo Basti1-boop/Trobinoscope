@@ -1,8 +1,14 @@
-<?php
+﻿<?php
 require_once 'auth.php';
 require_once 'config.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: index.php');
+    exit();
+}
+
+if (!csrf_validate()) {
+    $_SESSION['flash_error'] = 'Jeton de securite invalide. Merci de reessayer.';
     header('Location: index.php');
     exit();
 }

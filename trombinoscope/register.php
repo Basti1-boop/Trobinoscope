@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 require_once 'config.php';
 
@@ -8,32 +8,41 @@ if (isset($_SESSION['flash_email_exists'])) {
   unset($_SESSION['flash_email_exists']);
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $prenom = trim($_POST['prenom']);
-  $nom = trim($_POST['nom']);
-  $email = trim($_POST['email']);
-  $password = $_POST['password'];
-  $promo = $_POST['promo'];
-  $specialite = trim($_POST['specialite']);
-  $bio = trim($_POST['bio']);
+$flashError = '';
+if (isset($_SESSION['flash_error'])) {
+  $flashError = $_SESSION['flash_error'];
+  unset($_SESSION['flash_error']);
+}
 
-  // Vérification des champs obligatoires
-  if (empty($prenom) || empty($nom) || empty($email) || empty($password) || empty($promo)) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  if (!csrf_validate()) {
+    $_SESSION['flash_error'] = 'Jeton de securite invalide. Merci de reessayer.';
+    header("Location: register.php");
+    exit();
+  }
+
+  $prenom = trim($_POST['prenom'] ?? '');
+  $nom = trim($_POST['nom'] ?? '');
+  $email = trim($_POST['email'] ?? '');
+  $password = $_POST['password'] ?? '';
+  $promo = $_POST['promo'] ?? '';
+  $specialite = trim($_POST['specialite'] ?? '');
+  $bio = trim($_POST['bio'] ?? '');
+
+  if ($prenom === '' || $nom === '' || $email === '' || $password === '' || $promo === '') {
     $_SESSION['flash_error'] = "Veuillez remplir tous les champs obligatoires.";
     header("Location: register.php");
     exit();
   }
 
-  // Vérification de l'unicité de l'email
   $stmt = $pdo->prepare("SELECT id FROM utilisateurs WHERE email = ?");
   $stmt->execute([$email]);
   if ($stmt->fetch()) {
-    $_SESSION['flash_email_exists'] = "L'adresse email est déjà utilisée. Veuillez en choisir une autre.";
+    $_SESSION['flash_email_exists'] = "L'adresse email est deja utilisee. Veuillez en choisir une autre.";
     header("Location: register.php");
     exit();
   }
 
-  // Hachage du mot de passe
   $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
   $avatar = 'default.svg';
@@ -44,9 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     'image/webp',
     'image/avif',
   ];
-
-  // Pendant le développement, décommentez pour inspecter la structure de $_FILES.
-  // var_dump($_FILES);
 
   if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
     $avatarTmpPath = $_FILES['avatar']['tmp_name'];
@@ -64,7 +70,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
     }
 
-    // Fallback si les fonctions MIME ne sont pas disponibles sur l'environnement.
     if (!$avatarMimeType) {
       $extension = strtolower(pathinfo($avatarOriginalName, PATHINFO_EXTENSION));
       $mimeByExtension = [
@@ -93,17 +98,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   }
 
-  // Insertion dans la base de données
   $stmt = $pdo->prepare("INSERT INTO utilisateurs (prenom, nom, email, password, promo, specialite, bio, avatar) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
   $stmt->execute([$prenom, $nom, $email, $hashedPassword, $promo, $specialite, $bio, $avatar]);
 
-  // Redirection vers la page de connexion après inscription réussie
   header("Location: login.php");
   exit();
 }
-
 ?>
-
 
 <!DOCTYPE html>
 <html lang="fr">
@@ -133,6 +134,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <div class="container-sm">
 
+    <?php if ($flashError !== ''): ?>
+      <div class="flash flash-error">
+        <?php echo htmlspecialchars($flashError, ENT_QUOTES, 'UTF-8'); ?>
+      </div>
+    <?php endif; ?>
+
     <?php if ($flashEmailExists !== ''): ?>
       <div class="flash flash-error">
         <?php echo htmlspecialchars($flashEmailExists, ENT_QUOTES, 'UTF-8'); ?>
@@ -140,13 +147,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
 
     <div class="form-card">
-      <div class="form-title">Créer un compte</div>
+      <div class="form-title">Creer un compte</div>
       <div class="form-subtitle">Rejoignez le trombinoscope de votre promotion.</div>
 
       <form action="" method="POST" enctype="multipart/form-data">
+        <?php echo csrf_field(); ?>
 
         <div class="avatar-upload">
-          <img src="https://api.dicebear.com/7.x/personas/svg?seed=default&backgroundColor=e2ddd6" alt="Avatar par défaut" id="preview-avatar">
+          <img src="https://api.dicebear.com/7.x/personas/svg?seed=default&backgroundColor=e2ddd6" alt="Avatar par defaut" id="preview-avatar">
           <div>
             <label for="avatar">Photo de profil</label>
             <input type="file" id="avatar" name="avatar" accept="image/*">
@@ -157,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <hr class="divider">
 
         <div class="form-group">
-          <label for="prenom">Prénom</label>
+          <label for="prenom">Prenom</label>
           <input type="text" id="prenom" name="prenom" placeholder="Alice" required>
         </div>
 
@@ -173,8 +181,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="form-group">
           <label for="password">Mot de passe</label>
-          <input type="password" id="password" name="password" placeholder="8 caractères minimum" required>
-          <p class="form-hint">Au moins 8 caractères.</p>
+          <input type="password" id="password" name="password" placeholder="8 caracteres minimum" required>
+          <p class="form-hint">Au moins 8 caracteres.</p>
         </div>
 
         <div class="form-group">
@@ -188,8 +196,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <div class="form-group">
-          <label for="specialite">Spécialité</label>
-          <input type="text" id="specialite" name="specialite" placeholder="Développeur Web, Designer...">
+          <label for="specialite">Specialite</label>
+          <input type="text" id="specialite" name="specialite" placeholder="Developpeur Web, Designer...">
         </div>
 
         <div class="form-group">
@@ -197,12 +205,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <textarea id="bio" name="bio" placeholder="Parlez-vous en quelques mots..."></textarea>
         </div>
 
-        <button type="submit" class="btn btn-primary">Créer mon compte</button>
+        <button type="submit" class="btn btn-primary">Creer mon compte</button>
 
       </form>
 
       <div class="form-footer">
-        Déjà inscrit ? <a href="login.php">Se connecter</a>
+        Deja inscrit ? <a href="login.php">Se connecter</a>
       </div>
     </div>
   </div>
