@@ -1,4 +1,7 @@
 <?php
+session_start();
+$isLoggedIn = isset($_SESSION['user_id']);
+
 require_once 'config.php';
 
 $promo = trim($_GET['promo'] ?? '');
@@ -38,8 +41,13 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </button>
     <ul class="nav-links">
       <li><a href="index.php">Accueil</a></li>
-      <li><a href="register.php">Inscription</a></li>
-      <li><a href="login.php" class="btn-nav">Connexion</a></li>
+      <?php if ($isLoggedIn): ?>
+        <li><a href="profil.php">Mon profil</a></li>
+        <li><a href="logout.php" class="btn-nav">Déconnexion</a></li>
+      <?php else: ?>
+        <li><a href="register.php">Inscription</a></li>
+        <li><a href="login.php" class="btn-nav">Connexion</a></li>
+      <?php endif; ?>
     </ul>
   </nav>
 
@@ -66,107 +74,107 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="trombi-grid">
 
       <?php if ($showAll || $promo === 'BUT1 2024'): ?>
-      <div class="trombi-card card">
-        <a href="profil.php">
-          <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Alice&backgroundColor=b6e3f4" alt="Alice Martin">
-          <div class="card-body">
-            <div class="card-name">Alice Martin</div>
-            <div class="card-role">Développeuse Web</div>
-            <span class="card-promo">BUT1 2024</span>
-          </div>
-        </a>
-      </div>
+        <div class="trombi-card card">
+          <a href="profil.php">
+            <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Alice&backgroundColor=b6e3f4" alt="Alice Martin">
+            <div class="card-body">
+              <div class="card-name">Alice Martin</div>
+              <div class="card-role">Développeuse Web</div>
+              <span class="card-promo">BUT1 2024</span>
+            </div>
+          </a>
+        </div>
       <?php endif; ?>
 
       <?php if ($showAll || $promo === 'BUT1 2024'): ?>
-      <div class="trombi-card card">
-        <a href="profil.php">
-          <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Lucas&backgroundColor=ffdfbf" alt="Lucas Bernard">
-          <div class="card-body">
-            <div class="card-name">Lucas Bernard</div>
-            <div class="card-role">Designer UI</div>
-            <span class="card-promo">BUT1 2024</span>
-          </div>
-        </a>
-      </div>
+        <div class="trombi-card card">
+          <a href="profil.php">
+            <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Lucas&backgroundColor=ffdfbf" alt="Lucas Bernard">
+            <div class="card-body">
+              <div class="card-name">Lucas Bernard</div>
+              <div class="card-role">Designer UI</div>
+              <span class="card-promo">BUT1 2024</span>
+            </div>
+          </a>
+        </div>
       <?php endif; ?>
 
       <?php if ($showAll || $promo === 'BUT2 2023'): ?>
-      <div class="trombi-card card">
-        <a href="profil.php">
-          <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Sofia&backgroundColor=d1f4d1" alt="Sofia Dupont">
-          <div class="card-body">
-            <div class="card-name">Sofia Dupont</div>
-            <div class="card-role">Data Analyst</div>
-            <span class="card-promo">BUT2 2023</span>
-          </div>
-        </a>
-      </div>
+        <div class="trombi-card card">
+          <a href="profil.php">
+            <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Sofia&backgroundColor=d1f4d1" alt="Sofia Dupont">
+            <div class="card-body">
+              <div class="card-name">Sofia Dupont</div>
+              <div class="card-role">Data Analyst</div>
+              <span class="card-promo">BUT2 2023</span>
+            </div>
+          </a>
+        </div>
       <?php endif; ?>
 
       <?php if ($showAll || $promo === 'BUT2 2023'): ?>
-      <div class="trombi-card card">
-        <a href="profil.php">
-          <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Karim&backgroundColor=ffd5dc" alt="Karim Ndiaye">
-          <div class="card-body">
-            <div class="card-name">Karim Ndiaye</div>
-            <div class="card-role">DevOps</div>
-            <span class="card-promo">BUT2 2023</span>
-          </div>
-        </a>
-      </div>
+        <div class="trombi-card card">
+          <a href="profil.php">
+            <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Karim&backgroundColor=ffd5dc" alt="Karim Ndiaye">
+            <div class="card-body">
+              <div class="card-name">Karim Ndiaye</div>
+              <div class="card-role">DevOps</div>
+              <span class="card-promo">BUT2 2023</span>
+            </div>
+          </a>
+        </div>
       <?php endif; ?>
 
       <?php if ($showAll || $promo === 'BUT3 2022'): ?>
-      <div class="trombi-card card">
-        <a href="profil.php">
-          <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Emma&backgroundColor=e8d5ff" alt="Emma Leroy">
-          <div class="card-body">
-            <div class="card-name">Emma Leroy</div>
-            <div class="card-role">Product Manager</div>
-            <span class="card-promo">BUT3 2022</span>
-          </div>
-        </a>
-      </div>
+        <div class="trombi-card card">
+          <a href="profil.php">
+            <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Emma&backgroundColor=e8d5ff" alt="Emma Leroy">
+            <div class="card-body">
+              <div class="card-name">Emma Leroy</div>
+              <div class="card-role">Product Manager</div>
+              <span class="card-promo">BUT3 2022</span>
+            </div>
+          </a>
+        </div>
       <?php endif; ?>
 
       <?php if ($showAll || $promo === 'BUT3 2022'): ?>
-      <div class="trombi-card card">
-        <a href="profil.php">
-          <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Noah&backgroundColor=fff3b0" alt="Noah Girard">
-          <div class="card-body">
-            <div class="card-name">Noah Girard</div>
-            <div class="card-role">Sécurité Réseau</div>
-            <span class="card-promo">BUT3 2022</span>
-          </div>
-        </a>
-      </div>
+        <div class="trombi-card card">
+          <a href="profil.php">
+            <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Noah&backgroundColor=fff3b0" alt="Noah Girard">
+            <div class="card-body">
+              <div class="card-name">Noah Girard</div>
+              <div class="card-role">Sécurité Réseau</div>
+              <span class="card-promo">BUT3 2022</span>
+            </div>
+          </a>
+        </div>
       <?php endif; ?>
 
       <?php if ($showAll || $promo === 'BUT1 2024'): ?>
-      <div class="trombi-card card">
-        <a href="profil.php">
-          <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Yasmine&backgroundColor=c0f0f0" alt="Yasmine Benali">
-          <div class="card-body">
-            <div class="card-name">Yasmine Benali</div>
-            <div class="card-role">Développeuse Mobile</div>
-            <span class="card-promo">BUT1 2024</span>
-          </div>
-        </a>
-      </div>
+        <div class="trombi-card card">
+          <a href="profil.php">
+            <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Yasmine&backgroundColor=c0f0f0" alt="Yasmine Benali">
+            <div class="card-body">
+              <div class="card-name">Yasmine Benali</div>
+              <div class="card-role">Développeuse Mobile</div>
+              <span class="card-promo">BUT1 2024</span>
+            </div>
+          </a>
+        </div>
       <?php endif; ?>
 
       <?php if ($showAll || $promo === 'BUT2 2023'): ?>
-      <div class="trombi-card card">
-        <a href="profil.php">
-          <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Tom&backgroundColor=ffd5b0" alt="Tom Faure">
-          <div class="card-body">
-            <div class="card-name">Tom Faure</div>
-            <div class="card-role">Administrateur Sys.</div>
-            <span class="card-promo">BUT2 2023</span>
-          </div>
-        </a>
-      </div>
+        <div class="trombi-card card">
+          <a href="profil.php">
+            <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Tom&backgroundColor=ffd5b0" alt="Tom Faure">
+            <div class="card-body">
+              <div class="card-name">Tom Faure</div>
+              <div class="card-role">Administrateur Sys.</div>
+              <span class="card-promo">BUT2 2023</span>
+            </div>
+          </a>
+        </div>
       <?php endif; ?>
 
       <?php foreach ($utilisateurs as $utilisateur): ?>
@@ -204,5 +212,3 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </body>
 
 </html>
-
-
