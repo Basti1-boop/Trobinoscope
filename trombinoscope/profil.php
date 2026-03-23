@@ -363,8 +363,6 @@ if (isset($_SESSION['flash_success'])) {
       <div class="profile-actions">
         <?php if ($isOwnProfile): ?>
           <a href="edit-profil.php" class="btn btn-secondary btn-sm">Modifier le profil</a>
-        <?php endif; ?>
-        <?php if ($isLoggedIn): ?>
           <a href="logout.php" class="btn btn-danger btn-sm">Deconnexion</a>
         <?php endif; ?>
       </div>

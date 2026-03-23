@@ -43,7 +43,7 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <ul class="nav-links">
       <li><a href="index.php">Accueil</a></li>
       <?php if ($isLoggedIn): ?>
-        <li><a href="profil.php">Mon profil</a></li>
+        <li><a href="profil.php?id=<?php echo (int) $_SESSION['user_id']; ?>">Mon profil</a></li>
         <li><a href="logout.php" class="btn-nav">Déconnexion</a></li>
       <?php else: ?>
         <li><a href="register.php">Inscription</a></li>

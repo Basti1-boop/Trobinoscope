@@ -80,7 +80,7 @@ $contenu_actuel = $publication['contenu'];
     </button>
     <ul class="nav-links">
       <li><a href="index.php">Accueil</a></li>
-      <li><a href="profil.php">Mon profil</a></li>
+      <li><a href="profil.php?id=<?php echo (int) $_SESSION['user_id']; ?>">Mon profil</a></li>
       <li><a href="logout.php">Déconnexion</a></li>
     </ul>
   </nav>
