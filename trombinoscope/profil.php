@@ -246,6 +246,26 @@ function promo_group($promo) {
 
 $isFakeProfile = ($fakeKey !== '' && isset($fakeProfiles[$fakeKey]));
 
+function table_exists(PDO $pdo, string $table): bool
+{
+  try {
+    $stmt = $pdo->query('SELECT DATABASE()');
+    $dbName = $stmt ? $stmt->fetchColumn() : null;
+    if (!$dbName) {
+      $stmt = $pdo->prepare('SHOW TABLES LIKE ?');
+      $stmt->execute([$table]);
+      return (bool) $stmt->fetchColumn();
+    }
+    $stmt = $pdo->prepare(
+      'SELECT 1 FROM information_schema.tables WHERE table_schema = ? AND table_name = ? LIMIT 1'
+    );
+    $stmt->execute([$dbName, $table]);
+    return (bool) $stmt->fetchColumn();
+  } catch (Throwable $e) {
+    return false;
+  }
+}
+
 if ($isFakeProfile) {
   $profil = $fakeProfiles[$fakeKey];
   $fullName = trim(($profil['prenom'] ?? '') . ' ' . ($profil['nom'] ?? ''));
@@ -349,6 +369,101 @@ if ($isLoggedIn && $isFakeProfile) {
   $commentRestrictionMessage = 'Profil fictif : les commentaires sont desactives.';
 } elseif ($isLoggedIn && !$isFakeProfile && !$canComment) {
   $commentRestrictionMessage = 'Vous pouvez commenter uniquement les profils de votre promo.';
+}
+
+$reactionsReady = table_exists($pdo, 'publication_reactions')
+  && table_exists($pdo, 'comment_reactions');
+$canReact = $isLoggedIn && !$isFakeProfile && $reactionsReady;
+$reactionSetupMessage = '';
+if ($isLoggedIn && !$isFakeProfile && !$reactionsReady) {
+  $reactionSetupMessage = "Les tables de reactions ne sont pas trouvees dans la base.";
+}
+$publicationReactions = [];
+$publicationUserReactions = [];
+$commentReactions = [];
+$commentUserReactions = [];
+
+if ($canReact) {
+  $publicationIds = array_map(static function ($publication) {
+    return (int) ($publication['id'] ?? 0);
+  }, $publications ?? []);
+  $publicationIds = array_values(array_filter($publicationIds));
+
+  if (!empty($publicationIds)) {
+    $inPlaceholders = implode(',', array_fill(0, count($publicationIds), '?'));
+    $stmt = $pdo->prepare(
+      "SELECT publication_id, " .
+      "SUM(reaction = 'like') AS likes, " .
+      "SUM(reaction = 'dislike') AS dislikes " .
+      "FROM publication_reactions " .
+      "WHERE publication_id IN ($inPlaceholders) " .
+      "GROUP BY publication_id"
+    );
+    $stmt->execute($publicationIds);
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+      $pubId = (int) $row['publication_id'];
+      $publicationReactions[$pubId] = [
+        'likes' => (int) $row['likes'],
+        'dislikes' => (int) $row['dislikes'],
+      ];
+    }
+
+    if ($isLoggedIn) {
+      $params = $publicationIds;
+      $params[] = (int) $_SESSION['user_id'];
+      $stmt = $pdo->prepare(
+        "SELECT publication_id, reaction " .
+        "FROM publication_reactions " .
+        "WHERE publication_id IN ($inPlaceholders) AND utilisateur_id = ?"
+      );
+      $stmt->execute($params);
+      foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $publicationUserReactions[(int) $row['publication_id']] = $row['reaction'];
+      }
+    }
+  }
+
+  $commentIds = [];
+  if (isset($comments)) {
+    foreach ($comments as $comment) {
+      $commentIds[] = (int) ($comment['id'] ?? 0);
+    }
+  }
+  $commentIds = array_values(array_filter($commentIds));
+
+  if (!empty($commentIds)) {
+    $inPlaceholders = implode(',', array_fill(0, count($commentIds), '?'));
+    $stmt = $pdo->prepare(
+      "SELECT comment_id, " .
+      "SUM(reaction = 'like') AS likes, " .
+      "SUM(reaction = 'dislike') AS dislikes " .
+      "FROM comment_reactions " .
+      "WHERE comment_id IN ($inPlaceholders) " .
+      "GROUP BY comment_id"
+    );
+    $stmt->execute($commentIds);
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+      $commentId = (int) $row['comment_id'];
+      $commentReactions[$commentId] = [
+        'likes' => (int) $row['likes'],
+        'dislikes' => (int) $row['dislikes'],
+      ];
+    }
+
+    if ($isLoggedIn) {
+      $params = $commentIds;
+      $params[] = (int) $_SESSION['user_id'];
+      $stmt = $pdo->prepare(
+        "SELECT comment_id, reaction " .
+        "FROM comment_reactions " .
+        "WHERE comment_id IN ($inPlaceholders) AND utilisateur_id = ?"
+      );
+      $stmt->execute($params);
+      foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $commentUserReactions[(int) $row['comment_id']] = $row['reaction'];
+      }
+    }
+  }
 }
 
 $flashSuccess = '';
@@ -461,6 +576,11 @@ if (isset($_SESSION['flash_error'])) {
         <?php echo htmlspecialchars($commentRestrictionMessage, ENT_QUOTES, 'UTF-8'); ?>
       </div>
     <?php endif; ?>
+    <?php if ($reactionSetupMessage !== ''): ?>
+      <div class="flash flash-error">
+        <?php echo htmlspecialchars($reactionSetupMessage, ENT_QUOTES, 'UTF-8'); ?>
+      </div>
+    <?php endif; ?>
 
     <div class="post-list">
       <?php if (empty($publications)): ?>
@@ -487,6 +607,30 @@ if (isset($_SESSION['flash_error'])) {
           <div class="post-content">
             <?php echo nl2br(htmlspecialchars($publication['contenu'] ?? '', ENT_QUOTES, 'UTF-8')); ?>
           </div>
+          <?php if ($canReact): ?>
+            <?php
+            $pubReactions = $publicationReactions[$pubId] ?? ['likes' => 0, 'dislikes' => 0];
+            $pubUserReaction = $publicationUserReactions[$pubId] ?? '';
+            ?>
+            <div class="reaction-bar">
+              <form action="react-publication.php" method="POST" class="inline-form">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="publication_id" value="<?php echo $pubId; ?>">
+                <input type="hidden" name="reaction" value="like">
+                <button type="submit" class="btn btn-secondary btn-sm reaction-btn <?php echo $pubUserReaction === 'like' ? 'active' : ''; ?>" aria-label="Like">
+                  &#128077; <span class="reaction-count"><?php echo (int) $pubReactions['likes']; ?></span>
+                </button>
+              </form>
+              <form action="react-publication.php" method="POST" class="inline-form">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="publication_id" value="<?php echo $pubId; ?>">
+                <input type="hidden" name="reaction" value="dislike">
+                <button type="submit" class="btn btn-secondary btn-sm reaction-btn <?php echo $pubUserReaction === 'dislike' ? 'active' : ''; ?>" aria-label="Dislike">
+                  &#128078; <span class="reaction-count"><?php echo (int) $pubReactions['dislikes']; ?></span>
+                </button>
+              </form>
+            </div>
+          <?php endif; ?>
           <?php if ($isOwner): ?>
             <div class="post-actions">
               <a href="edit-post.php?id=<?php echo $pubId; ?>" class="btn btn-secondary btn-sm">Modifier</a>
@@ -521,6 +665,31 @@ if (isset($_SESSION['flash_error'])) {
                 <div class="comment-text">
                   <?php echo htmlspecialchars($comment['contenu'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
                 </div>
+                <?php if ($canReact): ?>
+                  <?php
+                  $commentId = (int) ($comment['id'] ?? 0);
+                  $commentReaction = $commentReactions[$commentId] ?? ['likes' => 0, 'dislikes' => 0];
+                  $commentUserReaction = $commentUserReactions[$commentId] ?? '';
+                  ?>
+                  <div class="comment-reactions">
+                    <form action="react-comment.php" method="POST" class="inline-form">
+                      <?php echo csrf_field(); ?>
+                      <input type="hidden" name="comment_id" value="<?php echo $commentId; ?>">
+                      <input type="hidden" name="reaction" value="like">
+                      <button type="submit" class="btn btn-secondary btn-sm reaction-btn <?php echo $commentUserReaction === 'like' ? 'active' : ''; ?>" aria-label="Like">
+                        &#128077; <span class="reaction-count"><?php echo (int) $commentReaction['likes']; ?></span>
+                      </button>
+                    </form>
+                    <form action="react-comment.php" method="POST" class="inline-form">
+                      <?php echo csrf_field(); ?>
+                      <input type="hidden" name="comment_id" value="<?php echo $commentId; ?>">
+                      <input type="hidden" name="reaction" value="dislike">
+                      <button type="submit" class="btn btn-secondary btn-sm reaction-btn <?php echo $commentUserReaction === 'dislike' ? 'active' : ''; ?>" aria-label="Dislike">
+                        &#128078; <span class="reaction-count"><?php echo (int) $commentReaction['dislikes']; ?></span>
+                      </button>
+                    </form>
+                  </div>
+                <?php endif; ?>
               </div>
             <?php endforeach; ?>
           </div>

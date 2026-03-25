@@ -33,6 +33,26 @@ CREATE TABLE commentaires (
     FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs (id) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE publication_reactions (
+    publication_id INT NOT NULL,
+    utilisateur_id INT NOT NULL,
+    reaction ENUM('like', 'dislike') NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (publication_id, utilisateur_id),
+    FOREIGN KEY (publication_id) REFERENCES publications (id) ON DELETE CASCADE,
+    FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs (id) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE comment_reactions (
+    comment_id INT NOT NULL,
+    utilisateur_id INT NOT NULL,
+    reaction ENUM('like', 'dislike') NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (comment_id, utilisateur_id),
+    FOREIGN KEY (comment_id) REFERENCES commentaires (id) ON DELETE CASCADE,
+    FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs (id) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
 CREATE TABLE password_resets (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

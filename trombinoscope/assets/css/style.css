@@ -498,6 +498,31 @@ textarea {
   margin: 0;
 }
 
+.reaction-bar {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  margin-top: 0.7rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.reaction-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.reaction-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.reaction-count {
+  font-weight: 700;
+}
+
 /* COMMENTAIRES */
 .comment-list {
   margin-top: 1rem;
@@ -538,6 +563,14 @@ textarea {
 .comment-text {
   font-size: 0.88rem;
   color: var(--muted);
+}
+
+.comment-reactions {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .comment-form {
