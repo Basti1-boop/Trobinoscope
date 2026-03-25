@@ -6,6 +6,10 @@ $user = 'root';
 $pass = 'root';
 $charset = 'utf8mb4';
 
+if (!defined('APP_BASE_URL')) {
+    define('APP_BASE_URL', '');
+}
+
 if (!defined('MAILTRAP_SMTP_HOST')) {
     define('MAILTRAP_SMTP_HOST', 'sandbox.smtp.mailtrap.io');
 }
@@ -60,4 +64,56 @@ function csrf_validate(): bool
         return false;
     }
     return hash_equals($sessionToken, $postedToken);
+}
+
+function app_base_url(): string
+{
+    $configuredBaseUrl = trim((string) APP_BASE_URL);
+    if ($configuredBaseUrl !== '') {
+        return rtrim($configuredBaseUrl, '/');
+    }
+
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $documentRoot = isset($_SERVER['DOCUMENT_ROOT']) ? realpath((string) $_SERVER['DOCUMENT_ROOT']) : false;
+    $currentDir = realpath(__DIR__);
+
+    if ($documentRoot && $currentDir) {
+        $normalizedDocumentRoot = str_replace('\\', '/', $documentRoot);
+        $normalizedCurrentDir = str_replace('\\', '/', $currentDir);
+
+        if (strpos($normalizedCurrentDir, $normalizedDocumentRoot) === 0) {
+            $relativePath = substr($normalizedCurrentDir, strlen($normalizedDocumentRoot));
+            $relativePath = trim((string) $relativePath, '/');
+
+            if ($relativePath !== '') {
+                return $scheme . '://' . $host . '/' . $relativePath;
+            }
+        }
+    }
+
+    $scriptDirectory = str_replace('\\', '/', dirname($_SERVER['PHP_SELF'] ?? '/'));
+    $scriptDirectory = rtrim($scriptDirectory, '/');
+
+    if ($scriptDirectory === '' || $scriptDirectory === '.') {
+        return $scheme . '://' . $host;
+    }
+
+    return $scheme . '://' . $host . $scriptDirectory;
+}
+
+function app_url(string $path = '', array $query = []): string
+{
+    $url = app_base_url();
+    $trimmedPath = ltrim($path, '/');
+
+    if ($trimmedPath !== '') {
+        $url .= '/' . $trimmedPath;
+    }
+
+    if (!empty($query)) {
+        $url .= '?' . http_build_query($query);
+    }
+
+    return $url;
 }

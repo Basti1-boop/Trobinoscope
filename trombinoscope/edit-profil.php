@@ -27,21 +27,9 @@ $specialite = $user['specialite'] ?? '';
 $bio = $user['bio'] ?? '';
 $avatar = $user['avatar'] ?? 'default.svg';
 
-function build_reset_password_url(string $token): string
-{
-  $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-  $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-  $basePath = str_replace('\\', '/', dirname($_SERVER['PHP_SELF'] ?? '/'));
-  $basePath = rtrim($basePath, '/');
-  if ($basePath === '' || $basePath === '.') {
-    $basePath = '';
-  }
-
-  return $scheme . '://' . $host . $basePath . '/reset-password.php?token=' . urlencode($token);
-}
-
 $avatarBackgrounds = ['b6e3f4', 'ffdfbf', 'd1f4d1', 'ffd5dc', 'e8d5ff', 'fff3b0', 'c0f0f0', 'ffd5b0'];
-function default_avatar_url($seed, $backgrounds) {
+function default_avatar_url($seed, $backgrounds)
+{
   $seed = trim((string) $seed);
   if ($seed === '') {
     $seed = 'Utilisateur';
@@ -50,7 +38,6 @@ function default_avatar_url($seed, $backgrounds) {
   $bg = $backgrounds[$index] ?? 'b6e3f4';
   return 'https://api.dicebear.com/7.x/personas/svg?seed=' . urlencode($seed) . '&backgroundColor=' . $bg;
 }
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (!csrf_validate()) {
     $_SESSION['flash_error'] = 'Jeton de securite invalide. Merci de reessayer.';
@@ -83,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $stmt->execute([$userId, $tokenHash]);
 
       $fullName = trim(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? ''));
-      $resetUrl = build_reset_password_url($token);
+      $resetUrl = app_url('reset-password.php', ['token' => $token]);
       send_password_reset_email($user['email'], $fullName !== '' ? $fullName : 'utilisateur', $resetUrl);
 
       $_SESSION['flash_success'] = 'Un email de changement de mot de passe vient d etre envoye.';
