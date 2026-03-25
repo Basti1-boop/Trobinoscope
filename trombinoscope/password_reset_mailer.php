@@ -67,3 +67,49 @@ function send_password_reset_email(string $toEmail, string $toName, string $rese
         throw new RuntimeException('Erreur SMTP Mailtrap: ' . $e->getMessage());
     }
 }
+
+function send_ip_unblock_email(string $toEmail, string $toName, string $unblockUrl): void
+{
+    $smtpHost = defined('MAILTRAP_SMTP_HOST') ? trim((string) MAILTRAP_SMTP_HOST) : '';
+    $smtpPort = defined('MAILTRAP_SMTP_PORT') ? (int) MAILTRAP_SMTP_PORT : 0;
+    $smtpUsername = defined('MAILTRAP_SMTP_USERNAME') ? trim((string) MAILTRAP_SMTP_USERNAME) : '';
+    $smtpPassword = defined('MAILTRAP_SMTP_PASSWORD') ? trim((string) MAILTRAP_SMTP_PASSWORD) : '';
+
+    if ($smtpHost === '' || $smtpPort <= 0 || $smtpUsername === '' || $smtpPassword === '') {
+        throw new RuntimeException('Configuration SMTP Mailtrap incomplete dans config.php.');
+    }
+
+    try {
+        $mailer = new PHPMailer(true);
+        $mailer->isSMTP();
+        $mailer->Host = $smtpHost;
+        $mailer->Port = $smtpPort;
+        $mailer->SMTPAuth = true;
+        $mailer->Username = $smtpUsername;
+        $mailer->Password = $smtpPassword;
+        $mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mailer->CharSet = 'UTF-8';
+
+        $mailer->setFrom('hello@demomailtrap.co', 'Trombinoscope');
+        $mailer->addAddress($toEmail, $toName);
+        $mailer->Subject = 'Deblocage de connexion';
+
+        $html = '<p>Bonjour ' . htmlspecialchars($toName, ENT_QUOTES, 'UTF-8') . ',</p>'
+            . '<p>Tu as atteint la limite de tentatives. Clique sur ce lien pour debloquer la connexion depuis ton appareil :</p>'
+            . '<p><a href="' . htmlspecialchars($unblockUrl, ENT_QUOTES, 'UTF-8') . '">Debloquer mon acces</a></p>'
+            . '<p>Ce lien expire dans 30 minutes.</p>'
+            . '<p>Si tu n es pas a l origine de cette demande, ignore simplement cet email.</p>';
+
+        $text = "Bonjour {$toName},\n\n"
+            . "Tu as atteint la limite de tentatives. Clique sur ce lien pour debloquer la connexion depuis ton appareil : {$unblockUrl}\n\n"
+            . "Ce lien expire dans 30 minutes.\n"
+            . "Si tu n es pas a l origine de cette demande, ignore simplement cet email.";
+
+        $mailer->isHTML(true);
+        $mailer->Body = $html;
+        $mailer->AltBody = $text;
+        $mailer->send();
+    } catch (Exception $e) {
+        throw new RuntimeException('Erreur SMTP Mailtrap: ' . $e->getMessage());
+    }
+}

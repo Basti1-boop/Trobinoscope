@@ -2,6 +2,7 @@ CREATE DATABASE IF NOT EXISTS trombinoscope CHARACTER SET utf8mb4 COLLATE utf8mb
 
 USE trombinoscope;
 
+
 CREATE TABLE utilisateurs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     prenom VARCHAR(100) NOT NULL,
@@ -60,5 +61,34 @@ CREATE TABLE password_resets (
     expires_at DATETIME NOT NULL,
     used_at DATETIME NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES utilisateurs (id) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE tentatives_connexion (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip VARCHAR(45) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_ip_created (ip, created_at)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE ip_blocks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip VARCHAR(45) NOT NULL,
+    blocked_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    released_at DATETIME NULL,
+    reason VARCHAR(255) NULL,
+    INDEX idx_ip_blocked (ip, released_at)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE ip_unblock_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip VARCHAR(45) NOT NULL,
+    user_id INT NOT NULL,
+    token_hash CHAR(64) NOT NULL UNIQUE,
+    expires_at DATETIME NOT NULL,
+    used_at DATETIME NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_ip_unblock_ip (ip),
     FOREIGN KEY (user_id) REFERENCES utilisateurs (id) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
