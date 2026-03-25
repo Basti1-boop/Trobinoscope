@@ -59,12 +59,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   $newAvatar = $avatar;
-  if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-    $maxFileSize = 2097152;
-    $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
-    $avatarTmpPath = $_FILES['avatar']['tmp_name'];
-    $avatarOriginalName = $_FILES['avatar']['name'];
-    $avatarSize = (int) $_FILES['avatar']['size'];
+  if (isset($_FILES['avatar']) && $_FILES['avatar']['name'] !== '') {
+    $uploadError = (int) ($_FILES['avatar']['error'] ?? UPLOAD_ERR_OK);
+    if ($uploadError !== UPLOAD_ERR_OK) {
+      $errors[] = "Le televersement de l'image a echoue (code $uploadError).";
+    } else {
+      $maxFileSize = 2097152;
+      $allowedMimeTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/pjpeg',
+        'image/png',
+        'image/x-png',
+        'image/webp',
+        'image/avif',
+      ];
+      $avatarTmpPath = $_FILES['avatar']['tmp_name'];
+      $avatarOriginalName = $_FILES['avatar']['name'];
+      $avatarSize = (int) $_FILES['avatar']['size'];
 
     $avatarMimeType = null;
     if (function_exists('mime_content_type')) {
@@ -77,30 +89,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
     }
 
-    if (!$avatarMimeType) {
-      $extension = strtolower(pathinfo($avatarOriginalName, PATHINFO_EXTENSION));
-      $mimeByExtension = [
-        'jpg' => 'image/jpeg',
-        'jpeg' => 'image/jpeg',
-        'png' => 'image/png',
-        'webp' => 'image/webp',
-        'avif' => 'image/avif',
-      ];
-      $avatarMimeType = $mimeByExtension[$extension] ?? '';
-    }
-
-    if ($avatarSize <= $maxFileSize && in_array($avatarMimeType, $allowedMimeTypes, true)) {
-      $uploadsDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads';
-      if (!is_dir($uploadsDir)) {
-        mkdir($uploadsDir, 0755, true);
+      if (!$avatarMimeType) {
+        $extension = strtolower(pathinfo($avatarOriginalName, PATHINFO_EXTENSION));
+        $mimeByExtension = [
+          'jpg' => 'image/jpeg',
+          'jpeg' => 'image/jpeg',
+          'png' => 'image/png',
+          'webp' => 'image/webp',
+          'avif' => 'image/avif',
+        ];
+        $avatarMimeType = $mimeByExtension[$extension] ?? '';
       }
 
-      $extension = strtolower(pathinfo($avatarOriginalName, PATHINFO_EXTENSION));
-      $uniqueAvatarName = uniqid('avatar_', true) . ($extension ? '.' . $extension : '');
-      $destination = $uploadsDir . DIRECTORY_SEPARATOR . $uniqueAvatarName;
+      if ($avatarSize > $maxFileSize) {
+        $errors[] = "L'image est trop lourde (max 2 Mo).";
+      } elseif (!in_array($avatarMimeType, $allowedMimeTypes, true)) {
+        $errors[] = "Format d'image non supporte. Utilisez JPG, PNG, WebP ou AVIF.";
+      } else {
+        $uploadsDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads';
+        if (!is_dir($uploadsDir)) {
+          mkdir($uploadsDir, 0755, true);
+        }
 
-      if (move_uploaded_file($avatarTmpPath, $destination)) {
-        $newAvatar = $uniqueAvatarName;
+        $extension = strtolower(pathinfo($avatarOriginalName, PATHINFO_EXTENSION));
+        $uniqueAvatarName = uniqid('avatar_', true) . ($extension ? '.' . $extension : '');
+        $destination = $uploadsDir . DIRECTORY_SEPARATOR . $uniqueAvatarName;
+
+        if (move_uploaded_file($avatarTmpPath, $destination)) {
+          $newAvatar = $uniqueAvatarName;
+        } else {
+          $errors[] = "Impossible d'enregistrer l'image. Verifiez les droits du dossier uploads.";
+        }
       }
     }
   }

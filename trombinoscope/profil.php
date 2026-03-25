@@ -246,6 +246,7 @@ if ($isFakeProfile) {
         'nom' => $comment['nom'] ?? '',
         'contenu' => $comment['contenu'] ?? '',
         'fake_key' => $comment['fake_key'] ?? '',
+        'created_at' => $comment['created_at'] ?? 'il y a quelques instants',
       ];
     }
   }
@@ -453,15 +454,20 @@ if (isset($_SESSION['flash_error'])) {
               }
               ?>
               <div class="comment">
-                <div class="comment-author">
-                  <a href="<?php echo htmlspecialchars($commentLink, ENT_QUOTES, 'UTF-8'); ?>">
-                    <?php echo htmlspecialchars($commentAuthor, ENT_QUOTES, 'UTF-8'); ?>
-                  </a>
-                </div>
-                <div class="comment-text">
-                  <?php echo htmlspecialchars($comment['contenu'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                </div>
+              <div class="comment-author">
+                <a href="<?php echo htmlspecialchars($commentLink, ENT_QUOTES, 'UTF-8'); ?>">
+                  <?php echo htmlspecialchars($commentAuthor, ENT_QUOTES, 'UTF-8'); ?>
+                </a>
+                <?php if (!empty($comment['created_at'])): ?>
+                  <span class="comment-meta">
+                    — <?php echo htmlspecialchars($comment['created_at'], ENT_QUOTES, 'UTF-8'); ?>
+                  </span>
+                <?php endif; ?>
               </div>
+              <div class="comment-text">
+                <?php echo htmlspecialchars($comment['contenu'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+              </div>
+            </div>
             <?php endforeach; ?>
           </div>
 

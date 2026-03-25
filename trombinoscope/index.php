@@ -18,6 +18,11 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+$fakePromos = ['BUT1 2024', 'BUT2 2023', 'BUT3 2022'];
+$hasFakeForFilter = $showAll || in_array($promo, $fakePromos, true);
+$hasUsers = !empty($utilisateurs);
+$showEmptyState = !($hasUsers || $hasFakeForFilter);
+
 ?>
 
 <!DOCTYPE html>
@@ -179,9 +184,10 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
       <?php endif; ?>
 
-<?php if (empty($utilisateurs)): ?>
-        <div class="flash">
-          Aucun membre ne correspond à ce filtre pour le moment.
+      <?php if ($showEmptyState): ?>
+        <div class="empty-state">
+          <h3>Aucun membre pour ce filtre</h3>
+          <p>Essayez un autre filtre ou revenez plus tard.</p>
         </div>
       <?php endif; ?>
       <?php foreach ($utilisateurs as $utilisateur): ?>
@@ -190,7 +196,7 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $prenom = $utilisateur['prenom'] ?? '';
         $nom = $utilisateur['nom'] ?? '';
         $specialite = $utilisateur['specialite'] ?? '';
-        $promo = $utilisateur['promo'] ?? '';
+        $promoUtilisateur = $utilisateur['promo'] ?? '';
         $avatar = $utilisateur['avatar'] ?? 'default.svg';
         $avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' . $avatar;
         $fullName = trim($prenom . ' ' . $nom);
@@ -201,7 +207,7 @@ $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="card-body">
               <div class="card-name"><?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?></div>
               <div class="card-role"><?php echo htmlspecialchars($specialite, ENT_QUOTES, 'UTF-8'); ?></div>
-              <span class="card-promo"><?php echo htmlspecialchars($promo, ENT_QUOTES, 'UTF-8'); ?></span>
+              <span class="card-promo"><?php echo htmlspecialchars($promoUtilisateur, ENT_QUOTES, 'UTF-8'); ?></span>
             </div>
           </a>
         </div>
