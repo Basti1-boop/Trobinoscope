@@ -40,6 +40,17 @@ function build_reset_password_url(string $token): string
   return $scheme . '://' . $host . $basePath . '/reset-password.php?token=' . urlencode($token);
 }
 
+$avatarBackgrounds = ['b6e3f4', 'ffdfbf', 'd1f4d1', 'ffd5dc', 'e8d5ff', 'fff3b0', 'c0f0f0', 'ffd5b0'];
+function default_avatar_url($seed, $backgrounds) {
+  $seed = trim((string) $seed);
+  if ($seed === '') {
+    $seed = 'Utilisateur';
+  }
+  $index = abs(crc32($seed)) % max(count($backgrounds), 1);
+  $bg = $backgrounds[$index] ?? 'b6e3f4';
+  return 'https://api.dicebear.com/7.x/personas/svg?seed=' . urlencode($seed) . '&backgroundColor=' . $bg;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (!csrf_validate()) {
     $_SESSION['flash_error'] = 'Jeton de securite invalide. Merci de reessayer.';
@@ -217,7 +228,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $avatar = $newAvatar;
 }
 
-$avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' . $avatar;
+$fullName = trim($prenom . ' ' . $nom);
+if ($avatar === '' || $avatar === 'default.svg') {
+  $avatarPath = default_avatar_url($fullName !== '' ? $fullName : ('user-' . $userId), $avatarBackgrounds);
+} else {
+  $avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' . $avatar;
+}
 ?>
 
 <!DOCTYPE html>

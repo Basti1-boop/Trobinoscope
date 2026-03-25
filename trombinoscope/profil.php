@@ -216,6 +216,34 @@ $fakeProfiles = [
   ],
 ];
 
+$avatarBackgrounds = ['b6e3f4', 'ffdfbf', 'd1f4d1', 'ffd5dc', 'e8d5ff', 'fff3b0', 'c0f0f0', 'ffd5b0'];
+function default_avatar_url($seed, $backgrounds) {
+  $seed = trim((string) $seed);
+  if ($seed === '') {
+    $seed = 'Utilisateur';
+  }
+  $index = abs(crc32($seed)) % max(count($backgrounds), 1);
+  $bg = $backgrounds[$index] ?? 'b6e3f4';
+  return 'https://api.dicebear.com/7.x/personas/svg?seed=' . urlencode($seed) . '&backgroundColor=' . $bg;
+}
+
+function promo_group($promo) {
+  $promo = strtoupper(trim((string) $promo));
+  if ($promo === '') {
+    return '';
+  }
+  if (strpos($promo, 'BUT1') === 0 || strpos($promo, 'B1') === 0) {
+    return 'B1';
+  }
+  if (strpos($promo, 'BUT2') === 0 || strpos($promo, 'B2') === 0) {
+    return 'B2';
+  }
+  if (strpos($promo, 'BUT3') === 0 || strpos($promo, 'B3') === 0) {
+    return 'B3';
+  }
+  return '';
+}
+
 $isFakeProfile = ($fakeKey !== '' && isset($fakeProfiles[$fakeKey]));
 
 if ($isFakeProfile) {
@@ -267,7 +295,11 @@ if ($isFakeProfile) {
 
   $fullName = trim(($profil['prenom'] ?? '') . ' ' . ($profil['nom'] ?? ''));
   $avatar = $profil['avatar'] ?? 'default.svg';
-  $avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' . $avatar;
+  if ($avatar === '' || $avatar === 'default.svg') {
+    $avatarPath = default_avatar_url($fullName !== '' ? $fullName : ('user-' . $profil['id']), $avatarBackgrounds);
+  } else {
+    $avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' . $avatar;
+  }
   $specialite = $profil['specialite'] ?? '';
   $promo = $profil['promo'] ?? '';
   $bio = $profil['bio'] ?? '';
@@ -301,6 +333,22 @@ if ($isFakeProfile) {
     }
     $commentsByPublication[$pubId][] = $comment;
   }
+}
+
+$currentUserPromoGroup = '';
+if ($isLoggedIn) {
+  $stmt = $pdo->prepare("SELECT promo FROM utilisateurs WHERE id = ? LIMIT 1");
+  $stmt->execute([(int) $_SESSION['user_id']]);
+  $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
+  $currentUserPromoGroup = promo_group($currentUser['promo'] ?? '');
+}
+$profilePromoGroup = promo_group($promo ?? '');
+$canComment = $isLoggedIn && !$isFakeProfile && $currentUserPromoGroup !== '' && $profilePromoGroup !== '' && $currentUserPromoGroup === $profilePromoGroup;
+$commentRestrictionMessage = '';
+if ($isLoggedIn && $isFakeProfile) {
+  $commentRestrictionMessage = 'Profil fictif : les commentaires sont desactives.';
+} elseif ($isLoggedIn && !$isFakeProfile && !$canComment) {
+  $commentRestrictionMessage = 'Vous pouvez commenter uniquement les profils de votre promo.';
 }
 
 $flashSuccess = '';
@@ -408,6 +456,12 @@ if (isset($_SESSION['flash_error'])) {
       </div>
     <?php endif; ?>
 
+    <?php if ($commentRestrictionMessage !== ''): ?>
+      <div class="flash flash-error">
+        <?php echo htmlspecialchars($commentRestrictionMessage, ENT_QUOTES, 'UTF-8'); ?>
+      </div>
+    <?php endif; ?>
+
     <div class="post-list">
       <?php if (empty($publications)): ?>
         <div class="flash">
@@ -454,24 +508,24 @@ if (isset($_SESSION['flash_error'])) {
               }
               ?>
               <div class="comment">
-              <div class="comment-author">
-                <a href="<?php echo htmlspecialchars($commentLink, ENT_QUOTES, 'UTF-8'); ?>">
-                  <?php echo htmlspecialchars($commentAuthor, ENT_QUOTES, 'UTF-8'); ?>
-                </a>
-                <?php if (!empty($comment['created_at'])): ?>
-                  <span class="comment-meta">
-                    — <?php echo htmlspecialchars($comment['created_at'], ENT_QUOTES, 'UTF-8'); ?>
-                  </span>
-                <?php endif; ?>
+                <div class="comment-author">
+                  <a href="<?php echo htmlspecialchars($commentLink, ENT_QUOTES, 'UTF-8'); ?>">
+                    <?php echo htmlspecialchars($commentAuthor, ENT_QUOTES, 'UTF-8'); ?>
+                  </a>
+                  <?php if (!empty($comment['created_at'])): ?>
+                    <span class="comment-meta">
+                      — <?php echo htmlspecialchars($comment['created_at'], ENT_QUOTES, 'UTF-8'); ?>
+                    </span>
+                  <?php endif; ?>
+                </div>
+                <div class="comment-text">
+                  <?php echo htmlspecialchars($comment['contenu'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                </div>
               </div>
-              <div class="comment-text">
-                <?php echo htmlspecialchars($comment['contenu'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
-              </div>
-            </div>
             <?php endforeach; ?>
           </div>
 
-          <?php if ($isLoggedIn): ?>
+          <?php if ($canComment): ?>
             <form action="comment.php" method="POST" class="comment-form">
               <?php echo csrf_field(); ?>
               <input type="hidden" name="post_id" value="<?php echo $pubId; ?>">

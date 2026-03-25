@@ -18,6 +18,17 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $utilisateurs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+$avatarBackgrounds = ['b6e3f4', 'ffdfbf', 'd1f4d1', 'ffd5dc', 'e8d5ff', 'fff3b0', 'c0f0f0', 'ffd5b0'];
+function default_avatar_url($seed, $backgrounds) {
+  $seed = trim((string) $seed);
+  if ($seed === '') {
+    $seed = 'Utilisateur';
+  }
+  $index = abs(crc32($seed)) % max(count($backgrounds), 1);
+  $bg = $backgrounds[$index] ?? 'b6e3f4';
+  return 'https://api.dicebear.com/7.x/personas/svg?seed=' . urlencode($seed) . '&backgroundColor=' . $bg;
+}
+
 $fakePromos = ['BUT1 2024', 'BUT2 2023', 'BUT3 2022'];
 $hasFakeForFilter = $showAll || in_array($promo, $fakePromos, true);
 $hasUsers = !empty($utilisateurs);
@@ -198,8 +209,12 @@ $showEmptyState = !($hasUsers || $hasFakeForFilter);
         $specialite = $utilisateur['specialite'] ?? '';
         $promoUtilisateur = $utilisateur['promo'] ?? '';
         $avatar = $utilisateur['avatar'] ?? 'default.svg';
-        $avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' . $avatar;
         $fullName = trim($prenom . ' ' . $nom);
+        if ($avatar === '' || $avatar === 'default.svg') {
+          $avatarPath = default_avatar_url($fullName !== '' ? $fullName : ('user-' . $id), $avatarBackgrounds);
+        } else {
+          $avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' . $avatar;
+        }
         ?>
         <div class="trombi-card card">
           <a href="profil.php?id=<?php echo $id; ?>">
