@@ -1,6 +1,11 @@
 ﻿<?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once 'password_reset_mailer.php';
+
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
 
 $userId = (int) $_SESSION['user_id'];
 $errors = [];
@@ -22,6 +27,19 @@ $specialite = $user['specialite'] ?? '';
 $bio = $user['bio'] ?? '';
 $avatar = $user['avatar'] ?? 'default.svg';
 
+function build_reset_password_url(string $token): string
+{
+  $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+  $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+  $basePath = str_replace('\\', '/', dirname($_SERVER['PHP_SELF'] ?? '/'));
+  $basePath = rtrim($basePath, '/');
+  if ($basePath === '' || $basePath === '.') {
+    $basePath = '';
+  }
+
+  return $scheme . '://' . $host . $basePath . '/reset-password.php?token=' . urlencode($token);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (!csrf_validate()) {
     $_SESSION['flash_error'] = 'Jeton de securite invalide. Merci de reessayer.';
@@ -29,28 +47,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit();
   }
 
-  $postedId = (int) ($_POST['id'] ?? 0);
-  if ($postedId !== $userId) {
-    $_SESSION['flash_error'] = "Vous ne pouvez pas modifier un autre profil.";
-    header('Location: profil.php?id=' . $userId);
-    exit();
+  $action = $_POST['action'] ?? 'update_profile';
+
+  if ($action === 'update_profile') {
+    $prenom = trim($_POST['prenom'] ?? '');
+    $nom = trim($_POST['nom'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $promo = trim($_POST['promo'] ?? '');
+    $specialite = trim($_POST['specialite'] ?? '');
+    $bio = trim($_POST['bio'] ?? '');
   }
 
-  $prenom = trim($_POST['prenom'] ?? '');
-  $nom = trim($_POST['nom'] ?? '');
-  $email = trim($_POST['email'] ?? '');
-  $promo = trim($_POST['promo'] ?? '');
-  $specialite = trim($_POST['specialite'] ?? '');
-  $bio = trim($_POST['bio'] ?? '');
-  $password = $_POST['password'] ?? '';
+  if ($action === 'send_password_reset') {
+    try {
+      ensure_password_resets_table($pdo);
 
-  if ($prenom === '' || $nom === '' || $email === '' || $promo === '') {
+      $stmt = $pdo->prepare('UPDATE password_resets SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL');
+      $stmt->execute([$userId]);
+
+      $token = bin2hex(random_bytes(32));
+      $tokenHash = hash('sha256', $token);
+
+      $stmt = $pdo->prepare('INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 30 MINUTE))');
+      $stmt->execute([$userId, $tokenHash]);
+
+      $fullName = trim(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? ''));
+      $resetUrl = build_reset_password_url($token);
+      send_password_reset_email($user['email'], $fullName !== '' ? $fullName : 'utilisateur', $resetUrl);
+
+      $_SESSION['flash_success'] = 'Un email de changement de mot de passe vient d etre envoye.';
+      header('Location: profil.php?id=' . $userId);
+      exit();
+    } catch (Throwable $e) {
+      $errors[] = 'Impossible d envoyer l email de changement de mot de passe. Verifiez la configuration SMTP Mailtrap dans config.php.';
+    }
+  }
+
+  if ($action === 'update_profile' && ($prenom === '' || $nom === '' || $email === '' || $promo === '')) {
     $errors[] = 'Veuillez remplir tous les champs obligatoires.';
-  } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+  } elseif ($action === 'update_profile' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $errors[] = 'Adresse email invalide.';
   }
 
-  if ($email !== ($user['email'] ?? '')) {
+  if ($action === 'update_profile' && $email !== ($user['email'] ?? '')) {
     $stmt = $pdo->prepare("SELECT id FROM utilisateurs WHERE email = ? AND id <> ? LIMIT 1");
     $stmt->execute([$email, $userId]);
     if ($stmt->fetch()) {
@@ -59,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   $newAvatar = $avatar;
-  if (isset($_FILES['avatar']) && $_FILES['avatar']['name'] !== '') {
+  if ($action === 'update_profile' && isset($_FILES['avatar']) && $_FILES['avatar']['name'] !== '') {
     $uploadError = (int) ($_FILES['avatar']['error'] ?? UPLOAD_ERR_OK);
     if ($uploadError !== UPLOAD_ERR_OK) {
       $errors[] = "Le televersement de l'image a echoue (code $uploadError).";
@@ -78,16 +117,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $avatarOriginalName = $_FILES['avatar']['name'];
       $avatarSize = (int) $_FILES['avatar']['size'];
 
-    $avatarMimeType = null;
-    if (function_exists('mime_content_type')) {
-      $avatarMimeType = mime_content_type($avatarTmpPath);
-    } elseif (function_exists('finfo_open')) {
-      $finfo = finfo_open(FILEINFO_MIME_TYPE);
-      if ($finfo !== false) {
-        $avatarMimeType = finfo_file($finfo, $avatarTmpPath);
-        finfo_close($finfo);
+      $avatarMimeType = null;
+      if (function_exists('mime_content_type')) {
+        $avatarMimeType = mime_content_type($avatarTmpPath);
+      } elseif (function_exists('finfo_open')) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo !== false) {
+          $avatarMimeType = finfo_file($finfo, $avatarTmpPath);
+          finfo_close($finfo);
+        }
       }
-    }
 
       if (!$avatarMimeType) {
         $extension = strtolower(pathinfo($avatarOriginalName, PATHINFO_EXTENSION));
@@ -124,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   }
 
-  if (empty($errors)) {
+  if ($action === 'update_profile' && empty($errors)) {
     $fields = [];
     $values = [];
 
@@ -156,11 +195,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $fields[] = 'avatar = ?';
       $values[] = $newAvatar;
     }
-    if ($password !== '') {
-      $fields[] = 'password = ?';
-      $values[] = password_hash($password, PASSWORD_DEFAULT);
-    }
-
     if (!empty($fields)) {
       $values[] = $userId;
       $sql = "UPDATE utilisateurs SET " . implode(', ', $fields) . " WHERE id = ?";
@@ -188,6 +222,7 @@ $avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' .
 
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -195,6 +230,7 @@ $avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' .
   <link rel="stylesheet" href="./assets/css/style.css">
   <script src="./assets/js/script.js" defer></script>
 </head>
+
 <body>
 
   <nav>
@@ -225,14 +261,12 @@ $avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' .
 
       <form action="" method="POST" enctype="multipart/form-data">
         <?php echo csrf_field(); ?>
-        <input type="hidden" name="id" value="<?php echo (int) $userId; ?>">
 
         <div class="avatar-upload">
           <img
             src="<?php echo htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8'); ?>"
             alt="Avatar actuel"
-            id="preview-avatar"
-          >
+            id="preview-avatar">
           <div>
             <label for="avatar">Changer la photo</label>
             <input type="file" id="avatar" name="avatar" accept="image/*">
@@ -278,14 +312,19 @@ $avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' .
           <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($email, ENT_QUOTES, 'UTF-8'); ?>" required>
         </div>
 
-        <div class="form-group">
-          <label for="password">Nouveau mot de passe</label>
-          <input type="password" id="password" name="password" placeholder="Laissez vide pour ne pas changer">
-          <p class="form-hint">Renseignez seulement si vous souhaitez le modifier.</p>
-        </div>
+        <input type="hidden" name="action" value="update_profile">
 
         <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
 
+      </form>
+
+      <hr class="divider">
+
+      <form action="" method="POST">
+        <?php echo csrf_field(); ?>
+        <input type="hidden" name="action" value="send_password_reset">
+        <p class="form-hint">Pour changer le mot de passe, un lien de securite est envoye par email.</p>
+        <button type="submit" class="btn btn-secondary">Recevoir un email pour changer mon mot de passe</button>
       </form>
 
       <div class="form-footer">
@@ -301,4 +340,5 @@ $avatarPath = preg_match('/^https?:\\/\\//', $avatar) ? $avatar : './uploads/' .
   </footer>
 
 </body>
+
 </html>

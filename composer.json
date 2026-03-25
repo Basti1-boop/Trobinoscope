@@ -1,0 +1,7 @@
+{
+    "require": {
+        "railsware/mailtrap-php": "^3.10",
+        "symfony/mime": "^7.4",
+        "phpmailer/phpmailer": "^7.0"
+    }
+}

@@ -1,13 +1,30 @@
 <?php
 
-$host = 'localhost'; 
-$db = 'trombinoscope'; 
-$user = 'root'; 
-$pass = 'root'; 
-$charset = 'utf8mb4'; 
+$host = 'localhost';
+$db = 'trombinoscope';
+$user = 'root';
+$pass = 'root';
+$charset = 'utf8mb4';
+
+if (!defined('MAILTRAP_SMTP_HOST')) {
+    define('MAILTRAP_SMTP_HOST', 'sandbox.smtp.mailtrap.io');
+}
+
+if (!defined('MAILTRAP_SMTP_PORT')) {
+    define('MAILTRAP_SMTP_PORT', 2525);
+}
+
+if (!defined('MAILTRAP_SMTP_USERNAME')) {
+    define('MAILTRAP_SMTP_USERNAME', '50051836126333');
+}
+
+if (!defined('MAILTRAP_SMTP_PASSWORD')) {
+    define('MAILTRAP_SMTP_PASSWORD', '62f6fd5c32e033');
+}
+
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
 $options = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, 
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     PDO::ATTR_EMULATE_PREPARES   => false,
 ];
@@ -44,5 +61,3 @@ function csrf_validate(): bool
     }
     return hash_equals($sessionToken, $postedToken);
 }
-
-?>

@@ -8,6 +8,11 @@ $remember = false;
 $successMessage = '';
 $loginSuccess = false;
 
+if (isset($_SESSION['flash_success'])) {
+    $successMessage = (string) $_SESSION['flash_success'];
+    unset($_SESSION['flash_success']);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_validate()) {
         $errors['csrf'] = "Jeton de securite invalide. Merci de reessayer.";
