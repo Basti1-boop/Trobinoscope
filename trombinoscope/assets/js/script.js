@@ -17,7 +17,7 @@ if (navToggle && navLinks) {
 document.querySelectorAll('.flash').forEach(function (flash) {
   const btn = document.createElement('button');
   btn.className   = 'flash-close';
-  btn.textContent = '×';
+  btn.textContent = '\u00D7';
   btn.setAttribute('aria-label', 'Fermer');
   btn.addEventListener('click', function () { flash.remove(); });
   flash.appendChild(btn);
@@ -46,3 +46,25 @@ if (avatarInput) {
     }
   });
 }
+/* --- Flash auto-dismiss (5s) with AJAX --- */
+document.querySelectorAll('.flash').forEach(function (flash) {
+  let type = 'info';
+  if (flash.classList.contains('flash-success')) { type = 'success'; }
+  if (flash.classList.contains('flash-error')) { type = 'error'; }
+
+  fetch('process_message.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: type, message: flash.textContent })
+  }).catch(function () {});
+
+  setTimeout(function () {
+    if (!flash.parentNode) { return; }
+    flash.classList.add('flash-hiding');
+    setTimeout(function () {
+      if (flash.parentNode) { flash.remove(); }
+    }, 300);
+  }, 10000);
+});
+
+

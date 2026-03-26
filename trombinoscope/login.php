@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 session_start();
 require_once 'config.php';
 require_once 'password_reset_mailer.php';
@@ -194,12 +194,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trombinoscope — Connexion</title>
+    <title>Trombinoscope � Connexion</title>
     <?php if ($loginSuccess): ?>
         <meta http-equiv="refresh" content="2;url=index.php">
     <?php endif; ?>
     <link rel="stylesheet" href="./assets/css/style.css">
-    <script src="./assets/js/script.js" defer></script>
+    <script src="./assets/js/script.js?v=20260326" defer></script>
 </head>
 
 <body>
@@ -300,3 +300,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </body>
 
 </html>
+

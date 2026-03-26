@@ -1,4 +1,4 @@
-ï»¿<?php
+<?php
 session_start();
 require_once 'config.php';
 
@@ -484,9 +484,9 @@ if (isset($_SESSION['flash_error'])) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trombinoscope â€” Profil <?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?></title>
+  <title>Trombinoscope — Profil <?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?></title>
   <link rel="stylesheet" href="./assets/css/style.css">
-  <script src="./assets/js/script.js" defer></script>
+  <script src="./assets/js/script.js?v=20260326" defer></script>
 </head>
 
 <body>
@@ -544,7 +544,7 @@ if (isset($_SESSION['flash_error'])) {
         <h1><?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?></h1>
         <?php if ($specialite !== '' || $promo !== ''): ?>
           <div class="role">
-            <?php echo htmlspecialchars(trim($specialite . ' â€” ' . $promo), ENT_QUOTES, 'UTF-8'); ?>
+            <?php echo htmlspecialchars(trim($specialite . ' — ' . $promo), ENT_QUOTES, 'UTF-8'); ?>
           </div>
         <?php endif; ?>
         <div class="bio"><?php echo nl2br(htmlspecialchars($bio, ENT_QUOTES, 'UTF-8')); ?></div>
@@ -602,7 +602,7 @@ if (isset($_SESSION['flash_error'])) {
             <?php if ($isOwner): ?>
               <span class="badge-owner">Vous</span>
             <?php endif; ?>
-            â€” <?php echo htmlspecialchars($publication['created_at'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+            — <?php echo htmlspecialchars($publication['created_at'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
           </div>
           <div class="post-content">
             <?php echo nl2br(htmlspecialchars($publication['contenu'] ?? '', ENT_QUOTES, 'UTF-8')); ?>
@@ -658,7 +658,7 @@ if (isset($_SESSION['flash_error'])) {
                   </a>
                   <?php if (!empty($comment['created_at'])): ?>
                     <span class="comment-meta">
-                      â€” <?php echo htmlspecialchars($comment['created_at'], ENT_QUOTES, 'UTF-8'); ?>
+                      — <?php echo htmlspecialchars($comment['created_at'], ENT_QUOTES, 'UTF-8'); ?>
                     </span>
                   <?php endif; ?>
                 </div>
@@ -716,3 +716,4 @@ if (isset($_SESSION['flash_error'])) {
 </body>
 
 </html>
+

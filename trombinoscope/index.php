@@ -1,4 +1,4 @@
-ï»¿<?php
+<?php
 session_start();
 $isLoggedIn = isset($_SESSION['user_id']);
 
@@ -42,9 +42,9 @@ $showEmptyState = !($hasUsers || $hasFakeForFilter);
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trombinoscope â€” Accueil</title>
+  <title>Trombinoscope — Accueil</title>
   <link rel="stylesheet" href="./assets/css/style.css">
-  <script src="./assets/js/script.js" defer></script>
+  <script src="./assets/js/script.js?v=20260326" defer></script>
 </head>
 
 <body>
@@ -60,7 +60,7 @@ $showEmptyState = !($hasUsers || $hasFakeForFilter);
       <li><a href="index.php">Accueil</a></li>
       <?php if ($isLoggedIn): ?>
         <li><a href="profil.php?id=<?php echo (int) $_SESSION['user_id']; ?>">Mon profil</a></li>
-        <li><a href="logout.php" class="btn-nav">DÃ©connexion</a></li>
+        <li><a href="logout.php" class="btn-nav">Déconnexion</a></li>
       <?php else: ?>
         <li><a href="register.php">Inscription</a></li>
         <li><a href="login.php" class="btn-nav">Connexion</a></li>
@@ -72,7 +72,7 @@ $showEmptyState = !($hasUsers || $hasFakeForFilter);
 
     <div class="hero">
       <h1>Le trombinoscope<br>de <em>votre promo <u>B1</u></em></h1>
-      <p>Retrouvez tous vos camarades, partagez vos publications et Ã©changez des commentaires.</p>
+      <p>Retrouvez tous vos camarades, partagez vos publications et échangez des commentaires.</p>
       <a href="register.php" class="btn btn-primary btn-inline">Rejoindre la promo</a>
     </div>
 
@@ -97,7 +97,7 @@ $showEmptyState = !($hasUsers || $hasFakeForFilter);
             <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Alice&backgroundColor=b6e3f4" alt="Alice Martin">
             <div class="card-body">
               <div class="card-name">Alice Martin</div>
-              <div class="card-role">DÃ©veloppeuse Web</div>
+              <div class="card-role">Développeuse Web</div>
               <span class="card-promo">BUT1 2024</span>
             </div>
           </a>
@@ -162,7 +162,7 @@ $showEmptyState = !($hasUsers || $hasFakeForFilter);
             <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Noah&backgroundColor=fff3b0" alt="Noah Girard">
             <div class="card-body">
               <div class="card-name">Noah Girard</div>
-              <div class="card-role">SÃ©curitÃ© RÃ©seau</div>
+              <div class="card-role">Sécurité Réseau</div>
               <span class="card-promo">BUT3 2022</span>
             </div>
           </a>
@@ -175,7 +175,7 @@ $showEmptyState = !($hasUsers || $hasFakeForFilter);
             <img class="card-img" src="https://api.dicebear.com/7.x/personas/svg?seed=Yasmine&backgroundColor=c0f0f0" alt="Yasmine Benali">
             <div class="card-body">
               <div class="card-name">Yasmine Benali</div>
-              <div class="card-role">DÃ©veloppeuse Mobile</div>
+              <div class="card-role">Développeuse Mobile</div>
               <span class="card-promo">BUT1 2024</span>
             </div>
           </a>
@@ -240,5 +240,6 @@ $showEmptyState = !($hasUsers || $hasFakeForFilter);
 </body>
 
 </html>
+
 
 
