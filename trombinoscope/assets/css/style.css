@@ -1034,7 +1034,7 @@ footer {
             text-decoration: underline;
         }
 
-        @media (max-width: 768px) {
+@media (max-width: 768px) {
             .admin-header {
                 padding: 1.5rem 1rem;
             }
@@ -1052,20 +1052,20 @@ footer {
                 width: 100%;
             }
 
-            .ip-item {
+.ip-item {
                 flex-direction: column;
                 align-items: flex-start;
             }
 
-            .ip-actions {
+.ip-actions {
                 width: 100%;
             }
 
-            .ip-actions form {
+.ip-actions form {
                 width: 100%;
             }
 
-            .ip-actions button {
+.ip-actions button {
                 width: 100%;
             }
         }
