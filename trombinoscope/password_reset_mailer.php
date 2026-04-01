@@ -113,3 +113,47 @@ function send_ip_unblock_email(string $toEmail, string $toName, string $unblockU
         throw new RuntimeException('Erreur SMTP Mailtrap: ' . $e->getMessage());
     }
 }
+
+function send_ip_unblock_request_to_admin(string $toEmail, string $toName, string $ip, string $adminUrl): void
+{
+    $smtpHost = defined('MAILTRAP_SMTP_HOST') ? trim((string) MAILTRAP_SMTP_HOST) : '';
+    $smtpPort = defined('MAILTRAP_SMTP_PORT') ? (int) MAILTRAP_SMTP_PORT : 0;
+    $smtpUsername = defined('MAILTRAP_SMTP_USERNAME') ? trim((string) MAILTRAP_SMTP_USERNAME) : '';
+    $smtpPassword = defined('MAILTRAP_SMTP_PASSWORD') ? trim((string) MAILTRAP_SMTP_PASSWORD) : '';
+
+    if ($smtpHost === '' || $smtpPort <= 0 || $smtpUsername === '' || $smtpPassword === '') {
+        throw new RuntimeException('Configuration SMTP Mailtrap incomplete dans config.php.');
+    }
+
+    try {
+        $mailer = new PHPMailer(true);
+        $mailer->isSMTP();
+        $mailer->Host = $smtpHost;
+        $mailer->Port = $smtpPort;
+        $mailer->SMTPAuth = true;
+        $mailer->Username = $smtpUsername;
+        $mailer->Password = $smtpPassword;
+        $mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mailer->CharSet = 'UTF-8';
+
+        $mailer->setFrom('hello@demomailtrap.co', 'Trombinoscope');
+        $mailer->addAddress($toEmail, $toName);
+        $mailer->Subject = 'Demande de deban IP';
+
+        $html = '<p>Bonjour ' . htmlspecialchars($toName, ENT_QUOTES, 'UTF-8') . ',</p>'
+            . '<p>Une demande de deban a ete faite pour l IP suivante : <strong>' . htmlspecialchars($ip, ENT_QUOTES, 'UTF-8') . '</strong></p>'
+            . '<p>Ouvrez le panneau admin pour traiter la demande :</p>'
+            . '<p><a href="' . htmlspecialchars($adminUrl, ENT_QUOTES, 'UTF-8') . '">Voir les demandes</a></p>';
+
+        $text = "Bonjour {$toName},\n\n"
+            . "Une demande de deban a ete faite pour l IP suivante : {$ip}\n"
+            . "Ouvrez le panneau admin pour traiter la demande : {$adminUrl}\n";
+
+        $mailer->isHTML(true);
+        $mailer->Body = $html;
+        $mailer->AltBody = $text;
+        $mailer->send();
+    } catch (Exception $e) {
+        throw new RuntimeException('Erreur SMTP Mailtrap: ' . $e->getMessage());
+    }
+}

@@ -345,3 +345,5 @@ if ($avatar === '' || $avatar === 'default.svg') {
 </body>
 
 </html>
+
+

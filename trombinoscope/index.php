@@ -60,6 +60,10 @@ $showEmptyState = !($hasUsers || $hasFakeForFilter);
       <li><a href="index.php">Accueil</a></li>
       <?php if ($isLoggedIn): ?>
         <li><a href="profil.php?id=<?php echo (int) $_SESSION['user_id']; ?>">Mon profil</a></li>
+        <?php if (!empty($_SESSION['is_admin'])): ?>
+          <li><a href="admin.php">Admin IP</a></li>
+          <li><a href="admin-users.php">Admin Utilisateurs</a></li>
+        <?php endif; ?>
         <li><a href="logout.php" class="btn-nav">Déconnexion</a></li>
       <?php else: ?>
         <li><a href="register.php">Inscription</a></li>
@@ -240,6 +244,9 @@ $showEmptyState = !($hasUsers || $hasFakeForFilter);
 </body>
 
 </html>
+
+
+
 
 
 

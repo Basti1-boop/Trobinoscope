@@ -87,7 +87,8 @@ function app_base_url(): string
             $relativePath = trim((string) $relativePath, '/');
 
             if ($relativePath !== '') {
-                return $scheme . '://' . $host . '/' . $relativePath;
+                $encodedPath = implode('/', array_map('rawurlencode', explode('/', $relativePath)));
+                return $scheme . '://' . $host . '/' . $encodedPath;
             }
         }
     }
@@ -99,7 +100,8 @@ function app_base_url(): string
         return $scheme . '://' . $host;
     }
 
-    return $scheme . '://' . $host . $scriptDirectory;
+    $encodedScriptDir = implode('/', array_map('rawurlencode', explode('/', ltrim($scriptDirectory, '/'))));
+    return $scheme . '://' . $host . '/' . $encodedScriptDir;
 }
 
 function app_url(string $path = '', array $query = []): string
@@ -108,7 +110,8 @@ function app_url(string $path = '', array $query = []): string
     $trimmedPath = ltrim($path, '/');
 
     if ($trimmedPath !== '') {
-        $url .= '/' . $trimmedPath;
+        $encodedPath = implode('/', array_map('rawurlencode', explode('/', $trimmedPath)));
+        $url .= '/' . $encodedPath;
     }
 
     if (!empty($query)) {

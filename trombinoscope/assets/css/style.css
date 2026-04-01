@@ -504,6 +504,11 @@ textarea {
   margin: 0;
 }
 
+.mono {
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+}
+
 .reaction-bar {
   display: flex;
   gap: 0.6rem;

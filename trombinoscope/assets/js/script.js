@@ -46,6 +46,29 @@ if (avatarInput) {
     }
   });
 }
+
+/* --- Copy IP helper --- */
+document.querySelectorAll('.copy-ip').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    const ip = btn.getAttribute('data-ip') || '';
+    if (!ip) { return; }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(ip).then(function () {
+        btn.textContent = 'Copié';
+        setTimeout(function () { btn.textContent = 'Copier'; }, 1000);
+      }).catch(function () {});
+    } else {
+      const temp = document.createElement('input');
+      temp.value = ip;
+      document.body.appendChild(temp);
+      temp.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(temp);
+      btn.textContent = 'Copié';
+      setTimeout(function () { btn.textContent = 'Copier'; }, 1000);
+    }
+  });
+});
 /* --- Flash auto-dismiss (5s) with AJAX --- */
 document.querySelectorAll('.flash').forEach(function (flash) {
   let type = 'info';

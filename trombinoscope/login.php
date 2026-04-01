@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 require_once 'config.php';
 require_once 'password_reset_mailer.php';
@@ -23,6 +23,17 @@ function table_exists(PDO $pdo, string $table): bool
     }
 }
 
+function normalize_ip(string $ip): string
+{
+    if ($ip === '::1') {
+        return '127.0.0.1';
+    }
+    if (stripos($ip, '::ffff:') === 0) {
+        return substr($ip, 7);
+    }
+    return $ip;
+}
+
 $errors = [];
 $email = '';
 $remember = false;
@@ -34,12 +45,15 @@ if (isset($_SESSION['flash_error'])) {
     unset($_SESSION['flash_error']);
 }
 
-$ipAddress = $_SERVER['REMOTE_ADDR'] ?? '';
-$ipTablesReady = table_exists($pdo, 'ip_blocks') && table_exists($pdo, 'ip_unblock_tokens');
+$ipAddressRaw = $_SERVER['REMOTE_ADDR'] ?? '';
+$ipAddress = $ipAddressRaw !== '' ? normalize_ip($ipAddressRaw) : '';
+$ipCandidates = array_values(array_unique(array_filter([$ipAddress, $ipAddressRaw])));
+$ipTablesReady = table_exists($pdo, 'ip_blocks') && table_exists($pdo, 'ip_unblock_requests');
 $isIpBlocked = false;
-if ($ipAddress !== '' && $ipTablesReady) {
-    $stmt = $pdo->prepare('SELECT id FROM ip_blocks WHERE ip = ? AND released_at IS NULL LIMIT 1');
-    $stmt->execute([$ipAddress]);
+if (!empty($ipCandidates) && $ipTablesReady) {
+    $placeholders = implode(',', array_fill(0, count($ipCandidates), '?'));
+    $stmt = $pdo->prepare("SELECT id FROM ip_blocks WHERE ip IN ($placeholders) AND released_at IS NULL LIMIT 1");
+    $stmt->execute($ipCandidates);
     $isIpBlocked = (bool) $stmt->fetchColumn();
 }
 
@@ -85,26 +99,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($user) {
-                $stmt = $pdo->prepare('UPDATE ip_unblock_tokens SET used_at = NOW() WHERE ip = ? AND used_at IS NULL');
-                $stmt->execute([$ipAddress]);
-
                 $token = bin2hex(random_bytes(32));
                 $tokenHash = hash('sha256', $token);
                 $stmt = $pdo->prepare(
-                    'INSERT INTO ip_unblock_tokens (ip, user_id, token_hash, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 MINUTE))'
+                    'INSERT INTO ip_unblock_requests (ip, user_id, token_hash) VALUES (?, ?, ?)'
                 );
                 $stmt->execute([$ipAddress, (int) $user['id'], $tokenHash]);
 
-                $fullName = trim(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? ''));
-                $unblockUrl = build_unblock_url($token);
-                send_ip_unblock_email($user['email'], $fullName !== '' ? $fullName : 'utilisateur', $unblockUrl);
+                $stmt = $pdo->prepare('SELECT email, prenom, nom FROM utilisateurs WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
+                $stmt->execute();
+                $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($admin) {
+                    $adminName = trim(($admin['prenom'] ?? '') . ' ' . ($admin['nom'] ?? ''));
+                    $adminUrl = app_url('admin.php');
+                    send_ip_unblock_request_to_admin($admin['email'], $adminName !== '' ? $adminName : 'admin', $ipAddress, $adminUrl);
+                }
             }
 
-            $_SESSION['flash_success'] = "Si l adresse existe, un email de debloquage a ete envoye.";
+            $_SESSION['flash_success'] = "Votre demande a ete envoyee a un administrateur.";
             header('Location: login.php');
             exit();
         } catch (Throwable $e) {
-            $_SESSION['flash_error'] = "Impossible d envoyer l email de debloquage.";
+            $_SESSION['flash_error'] = "Impossible d envoyer la demande de debloquage.";
             header('Location: login.php');
             exit();
         }
@@ -149,11 +166,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errors)) {
-        $stmt = $pdo->prepare("SELECT id, prenom, nom, email, password FROM utilisateurs WHERE email = ? LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id, prenom, nom, email, password, banned_at FROM utilisateurs WHERE email = ? LIMIT 1");
         $stmt->execute([$email]);
 
         if ($stmt->rowCount() < 1) {
-            $errors['email'] = "<span style='color:red;'>Erreur : Email ou mot de passe incorrect</span>";
+                $errors['email'] = "<span style='color:red;'>Erreur : Email ou mot de passe incorrect</span>";
             if ($ipAddress !== '') {
                 $stmt = $pdo->prepare('INSERT INTO tentatives_connexion (ip, email) VALUES (?, ?)');
                 $stmt->execute([$ipAddress, $email]);
@@ -161,7 +178,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if (!password_verify($password, $user['password'])) {
+            if (!empty($user['banned_at'])) {
+                $errors['password'] = "<span style='color:red;'>Erreur : Compte suspendu</span>";
+            } elseif (!password_verify($password, $user['password'])) {
                 $errors['password'] = "<span style='color:red;'>Erreur : Email ou mot de passe incorrect</span>";
                 if ($ipAddress !== '') {
                     $stmt = $pdo->prepare('INSERT INTO tentatives_connexion (ip, email) VALUES (?, ?)');
@@ -172,15 +191,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_prenom'] = $user['prenom'];
                 $_SESSION['user_nom'] = $user['nom'];
+                $stmt = $pdo->prepare('SELECT is_admin FROM utilisateurs WHERE id = ? LIMIT 1');
+                $stmt->execute([$user['id']]);
+                $userStatus = $stmt->fetch(PDO::FETCH_ASSOC);
+                $_SESSION['is_admin'] = (bool) ($userStatus['is_admin'] ?? false);
                 $loginSuccess = true;
                 $successMessage = "Connexion reussie. Redirection en cours...";
                 if ($ipAddress !== '') {
                     $stmt = $pdo->prepare('DELETE FROM tentatives_connexion WHERE ip = ?');
                     $stmt->execute([$ipAddress]);
                 }
-                if ($ipAddress !== '' && $ipTablesReady) {
-                    $stmt = $pdo->prepare('DELETE FROM ip_blocks WHERE ip = ?');
-                    $stmt->execute([$ipAddress]);
+                if (!empty($ipCandidates) && $ipTablesReady) {
+                    $placeholders = implode(',', array_fill(0, count($ipCandidates), '?'));
+                    $stmt = $pdo->prepare("DELETE FROM ip_blocks WHERE ip IN ($placeholders)");
+                    $stmt->execute($ipCandidates);
+                }
+                if ($ipAddress !== '') {
+                    $stmt = $pdo->prepare('UPDATE utilisateurs SET last_login_ip = ? WHERE id = ?');
+                    $stmt->execute([$ipAddress, (int) $user['id']]);
                 }
             }
         }
@@ -194,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trombinoscope � Connexion</title>
+    <title>Trombinoscope – Connexion</title>
     <?php if ($loginSuccess): ?>
         <meta http-equiv="refresh" content="2;url=index.php">
     <?php endif; ?>
@@ -300,4 +328,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </body>
 
 </html>
-

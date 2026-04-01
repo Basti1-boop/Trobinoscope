@@ -10,6 +10,13 @@ $isLoggedIn = isset($_SESSION['user_id']);
 $profileId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $fakeKey = strtolower(trim($_GET['fake'] ?? ''));
 
+if ($isLoggedIn && !isset($_SESSION['is_admin'])) {
+  $stmt = $pdo->prepare('SELECT is_admin FROM utilisateurs WHERE id = ? LIMIT 1');
+  $stmt->execute([(int) $_SESSION['user_id']]);
+  $row = $stmt->fetch(PDO::FETCH_ASSOC);
+  $_SESSION['is_admin'] = (bool) ($row['is_admin'] ?? false);
+}
+
 $fakeProfiles = [
   'alice' => [
     'prenom' => 'Alice',
@@ -716,4 +723,7 @@ if (isset($_SESSION['flash_error'])) {
 </body>
 
 </html>
+
+
+
 
