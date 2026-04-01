@@ -157,3 +157,112 @@ function send_ip_unblock_request_to_admin(string $toEmail, string $toName, strin
         throw new RuntimeException('Erreur SMTP Mailtrap: ' . $e->getMessage());
     }
 }
+
+function send_user_unban_request_to_admin(
+    string $toEmail,
+    string $toName,
+    string $userFullName,
+    string $userEmail,
+    string $adminUrl,
+    string $reason
+): void {
+    $smtpHost = defined('MAILTRAP_SMTP_HOST') ? trim((string) MAILTRAP_SMTP_HOST) : '';
+    $smtpPort = defined('MAILTRAP_SMTP_PORT') ? (int) MAILTRAP_SMTP_PORT : 0;
+    $smtpUsername = defined('MAILTRAP_SMTP_USERNAME') ? trim((string) MAILTRAP_SMTP_USERNAME) : '';
+    $smtpPassword = defined('MAILTRAP_SMTP_PASSWORD') ? trim((string) MAILTRAP_SMTP_PASSWORD) : '';
+
+    if ($smtpHost === '' || $smtpPort <= 0 || $smtpUsername === '' || $smtpPassword === '') {
+        throw new RuntimeException('Configuration SMTP Mailtrap incomplete dans config.php.');
+    }
+
+    $safeReason = trim($reason);
+    if ($safeReason === '') {
+        $safeReason = 'Aucune raison fournie.';
+    }
+
+    try {
+        $mailer = new PHPMailer(true);
+        $mailer->isSMTP();
+        $mailer->Host = $smtpHost;
+        $mailer->Port = $smtpPort;
+        $mailer->SMTPAuth = true;
+        $mailer->Username = $smtpUsername;
+        $mailer->Password = $smtpPassword;
+        $mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mailer->CharSet = 'UTF-8';
+
+        $mailer->setFrom('hello@demomailtrap.co', 'Trombinoscope');
+        $mailer->addAddress($toEmail, $toName);
+        $mailer->Subject = 'Demande de deban utilisateur';
+
+        $html = '<p>Bonjour ' . htmlspecialchars($toName, ENT_QUOTES, 'UTF-8') . ',</p>'
+            . '<p>Une demande de deban utilisateur a ete soumise :</p>'
+            . '<ul>'
+            . '<li>Utilisateur : <strong>' . htmlspecialchars($userFullName, ENT_QUOTES, 'UTF-8') . '</strong></li>'
+            . '<li>Email : <strong>' . htmlspecialchars($userEmail, ENT_QUOTES, 'UTF-8') . '</strong></li>'
+            . '<li>Raison : ' . htmlspecialchars($safeReason, ENT_QUOTES, 'UTF-8') . '</li>'
+            . '</ul>'
+            . '<p>Ouvrez le panneau admin pour traiter la demande :</p>'
+            . '<p><a href="' . htmlspecialchars($adminUrl, ENT_QUOTES, 'UTF-8') . '">Voir les demandes</a></p>';
+
+        $text = "Bonjour {$toName},\n\n"
+            . "Une demande de deban utilisateur a ete soumise :\n"
+            . "Utilisateur : {$userFullName}\n"
+            . "Email : {$userEmail}\n"
+            . "Raison : {$safeReason}\n\n"
+            . "Ouvrez le panneau admin pour traiter la demande : {$adminUrl}\n";
+
+        $mailer->isHTML(true);
+        $mailer->Body = $html;
+        $mailer->AltBody = $text;
+        $mailer->send();
+    } catch (Exception $e) {
+        throw new RuntimeException('Erreur SMTP Mailtrap: ' . $e->getMessage());
+    }
+}
+
+function send_user_unban_decision_email(string $toEmail, string $toName, bool $approved): void
+{
+    $smtpHost = defined('MAILTRAP_SMTP_HOST') ? trim((string) MAILTRAP_SMTP_HOST) : '';
+    $smtpPort = defined('MAILTRAP_SMTP_PORT') ? (int) MAILTRAP_SMTP_PORT : 0;
+    $smtpUsername = defined('MAILTRAP_SMTP_USERNAME') ? trim((string) MAILTRAP_SMTP_USERNAME) : '';
+    $smtpPassword = defined('MAILTRAP_SMTP_PASSWORD') ? trim((string) MAILTRAP_SMTP_PASSWORD) : '';
+
+    if ($smtpHost === '' || $smtpPort <= 0 || $smtpUsername === '' || $smtpPassword === '') {
+        throw new RuntimeException('Configuration SMTP Mailtrap incomplete dans config.php.');
+    }
+
+    $subject = $approved ? 'Demande de deban approuvee' : 'Demande de deban refusee';
+    $statusText = $approved ? 'approuvee' : 'refusee';
+
+    try {
+        $mailer = new PHPMailer(true);
+        $mailer->isSMTP();
+        $mailer->Host = $smtpHost;
+        $mailer->Port = $smtpPort;
+        $mailer->SMTPAuth = true;
+        $mailer->Username = $smtpUsername;
+        $mailer->Password = $smtpPassword;
+        $mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mailer->CharSet = 'UTF-8';
+
+        $mailer->setFrom('hello@demomailtrap.co', 'Trombinoscope');
+        $mailer->addAddress($toEmail, $toName);
+        $mailer->Subject = $subject;
+
+        $html = '<p>Bonjour ' . htmlspecialchars($toName, ENT_QUOTES, 'UTF-8') . ',</p>'
+            . '<p>Votre demande de deban a ete ' . htmlspecialchars($statusText, ENT_QUOTES, 'UTF-8') . '.</p>'
+            . '<p>Vous pouvez maintenant essayer de vous reconnecter.</p>';
+
+        $text = "Bonjour {$toName},\n\n"
+            . "Votre demande de deban a ete {$statusText}.\n"
+            . "Vous pouvez maintenant essayer de vous reconnecter.\n";
+
+        $mailer->isHTML(true);
+        $mailer->Body = $html;
+        $mailer->AltBody = $text;
+        $mailer->send();
+    } catch (Exception $e) {
+        throw new RuntimeException('Erreur SMTP Mailtrap: ' . $e->getMessage());
+    }
+}

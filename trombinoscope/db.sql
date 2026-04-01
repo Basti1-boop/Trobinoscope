@@ -132,6 +132,18 @@ CREATE TABLE admin_logs (
     INDEX idx_created_at (created_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE user_unban_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    reason TEXT NULL,
+    status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    handled_at DATETIME NULL,
+    FOREIGN KEY (user_id) REFERENCES utilisateurs (id) ON DELETE CASCADE,
+    INDEX idx_user_unban_status (status),
+    INDEX idx_user_unban_user (user_id)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
 INSERT INTO utilisateurs (prenom, nom, email, password, promo, specialite, bio, avatar, is_admin)
 SELECT
     'Admin',

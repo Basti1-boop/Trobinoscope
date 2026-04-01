@@ -1,5 +1,6 @@
 <?php
 require_once 'authAdmin.php';
+require_once 'password_reset_mailer.php';
 
 $message = '';
 $error = '';
@@ -16,6 +17,26 @@ function column_exists(PDO $pdo, string $table, string $column): bool
             'SELECT 1 FROM information_schema.columns WHERE table_schema = ? AND table_name = ? AND column_name = ? LIMIT 1'
         );
         $stmt->execute([$dbName, $table, $column]);
+        return (bool) $stmt->fetchColumn();
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
+function table_exists(PDO $pdo, string $table): bool
+{
+    try {
+        $stmt = $pdo->query('SELECT DATABASE()');
+        $dbName = $stmt ? $stmt->fetchColumn() : null;
+        if (!$dbName) {
+            $stmt = $pdo->prepare('SHOW TABLES LIKE ?');
+            $stmt->execute([$table]);
+            return (bool) $stmt->fetchColumn();
+        }
+        $stmt = $pdo->prepare(
+            'SELECT 1 FROM information_schema.tables WHERE table_schema = ? AND table_name = ? LIMIT 1'
+        );
+        $stmt->execute([$dbName, $table]);
         return (bool) $stmt->fetchColumn();
     } catch (Throwable $e) {
         return false;
@@ -40,28 +61,88 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action'] ?? '';
         $targetId = (int) ($_POST['user_id'] ?? 0);
         $reason = trim($_POST['reason'] ?? '');
+        $requestId = (int) ($_POST['request_id'] ?? 0);
 
-        if ($targetId <= 0) {
-            $error = "Utilisateur invalide.";
-        } elseif ($targetId === (int) $_SESSION['user_id']) {
-            $error = "Vous ne pouvez pas bannir votre propre compte.";
-        } else {
-            if ($action === 'ban_user') {
-                $stmt = $pdo->prepare('UPDATE utilisateurs SET banned_at = NOW(), ban_reason = ? WHERE id = ?');
-                $stmt->execute([$reason, $targetId]);
+        if ($action === 'ban_user' || $action === 'unban_user') {
+            if ($targetId <= 0) {
+                $error = "Utilisateur invalide.";
+            } elseif ($targetId === (int) $_SESSION['user_id']) {
+                $error = "Vous ne pouvez pas bannir votre propre compte.";
+            } else {
+                if ($action === 'ban_user') {
+                    $stmt = $pdo->prepare('UPDATE utilisateurs SET banned_at = NOW(), ban_reason = ? WHERE id = ?');
+                    $stmt->execute([$reason, $targetId]);
 
-                $stmt = $pdo->prepare('INSERT INTO admin_logs (admin_id, action, details, ip) VALUES (?, ?, ?, ?)');
-                $stmt->execute([(int) $_SESSION['user_id'], 'ban_user', 'user_id=' . $targetId, $_SERVER['REMOTE_ADDR'] ?? null]);
+                    $stmt = $pdo->prepare('INSERT INTO admin_logs (admin_id, action, details, ip) VALUES (?, ?, ?, ?)');
+                    $stmt->execute([(int) $_SESSION['user_id'], 'ban_user', 'user_id=' . $targetId, $_SERVER['REMOTE_ADDR'] ?? null]);
 
-                $message = "Utilisateur banni.";
-            } elseif ($action === 'unban_user') {
-                $stmt = $pdo->prepare('UPDATE utilisateurs SET banned_at = NULL, ban_reason = NULL WHERE id = ?');
-                $stmt->execute([$targetId]);
+                    $message = "Utilisateur banni.";
+                } elseif ($action === 'unban_user') {
+                    $stmt = $pdo->prepare('UPDATE utilisateurs SET banned_at = NULL, ban_reason = NULL WHERE id = ?');
+                    $stmt->execute([$targetId]);
 
-                $stmt = $pdo->prepare('INSERT INTO admin_logs (admin_id, action, details, ip) VALUES (?, ?, ?, ?)');
-                $stmt->execute([(int) $_SESSION['user_id'], 'unban_user', 'user_id=' . $targetId, $_SERVER['REMOTE_ADDR'] ?? null]);
+                    $stmt = $pdo->prepare('INSERT INTO admin_logs (admin_id, action, details, ip) VALUES (?, ?, ?, ?)');
+                    $stmt->execute([(int) $_SESSION['user_id'], 'unban_user', 'user_id=' . $targetId, $_SERVER['REMOTE_ADDR'] ?? null]);
 
-                $message = "Utilisateur debanni.";
+                    $message = "Utilisateur debanni.";
+                }
+            }
+        } elseif ($action === 'approve_user_unban' || $action === 'reject_user_unban') {
+            if ($requestId <= 0) {
+                $error = "Demande invalide.";
+            } elseif (!table_exists($pdo, 'user_unban_requests')) {
+                $error = "Les demandes de deban ne sont pas configurees.";
+            } else {
+                $stmt = $pdo->prepare(
+                    'SELECT r.id, r.user_id, r.status, u.email, u.prenom, u.nom ' .
+                    'FROM user_unban_requests r ' .
+                    'JOIN utilisateurs u ON u.id = r.user_id ' .
+                    'WHERE r.id = ? LIMIT 1'
+                );
+                $stmt->execute([$requestId]);
+                $request = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$request || $request['status'] !== 'pending') {
+                    $error = "Demande introuvable.";
+                } else {
+                    $userId = (int) $request['user_id'];
+                    $userEmail = (string) ($request['email'] ?? '');
+                    $userName = trim(($request['prenom'] ?? '') . ' ' . ($request['nom'] ?? ''));
+                    if ($action === 'approve_user_unban') {
+                        $stmt = $pdo->prepare('UPDATE utilisateurs SET banned_at = NULL, ban_reason = NULL WHERE id = ?');
+                        $stmt->execute([$userId]);
+
+                        $stmt = $pdo->prepare('UPDATE user_unban_requests SET status = ?, handled_at = NOW() WHERE id = ?');
+                        $stmt->execute(['approved', $requestId]);
+
+                        $stmt = $pdo->prepare('INSERT INTO admin_logs (admin_id, action, details, ip) VALUES (?, ?, ?, ?)');
+                        $stmt->execute([(int) $_SESSION['user_id'], 'approve_user_unban', 'request_id=' . $requestId . '; user_id=' . $userId, $_SERVER['REMOTE_ADDR'] ?? null]);
+
+                        $message = "Demande de deban approuvee.";
+                        if ($userEmail !== '') {
+                            try {
+                                send_user_unban_decision_email($userEmail, $userName !== '' ? $userName : 'Utilisateur', true);
+                            } catch (Throwable $e) {
+                                $message .= " (Email non envoye)";
+                            }
+                        }
+                    } else {
+                        $stmt = $pdo->prepare('UPDATE user_unban_requests SET status = ?, handled_at = NOW() WHERE id = ?');
+                        $stmt->execute(['rejected', $requestId]);
+
+                        $stmt = $pdo->prepare('INSERT INTO admin_logs (admin_id, action, details, ip) VALUES (?, ?, ?, ?)');
+                        $stmt->execute([(int) $_SESSION['user_id'], 'reject_user_unban', 'request_id=' . $requestId . '; user_id=' . $userId, $_SERVER['REMOTE_ADDR'] ?? null]);
+
+                        $message = "Demande de deban refusee.";
+                        if ($userEmail !== '') {
+                            try {
+                                send_user_unban_decision_email($userEmail, $userName !== '' ? $userName : 'Utilisateur', false);
+                            } catch (Throwable $e) {
+                                $message .= " (Email non envoye)";
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -75,6 +156,19 @@ if ($hasLastLoginIp) {
 
 $stmt = $pdo->query('SELECT ' . $selectFields . ' FROM utilisateurs ORDER BY created_at DESC');
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$pendingUnbanRequests = [];
+if (table_exists($pdo, 'user_unban_requests')) {
+    $stmt = $pdo->prepare(
+        'SELECT r.id, r.user_id, r.reason, r.requested_at, u.prenom, u.nom, u.email ' .
+        'FROM user_unban_requests r ' .
+        'JOIN utilisateurs u ON u.id = r.user_id ' .
+        'WHERE r.status = ? ' .
+        'ORDER BY r.requested_at DESC'
+    );
+    $stmt->execute(['pending']);
+    $pendingUnbanRequests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 
 <!DOCTYPE html>
@@ -84,6 +178,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trombinoscope • Admin Utilisateurs</title>
     <link rel="stylesheet" href="./assets/css/style.css">
+    <link rel="stylesheet" href="./assets/css/admin.css">
     <script src="./assets/js/script.js?v=20260326" defer></script>
 </head>
 <body>
@@ -115,6 +210,52 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <?php if ($error !== ''): ?>
         <div class="flash flash-error">
             <?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?>
+        </div>
+    <?php endif; ?>
+
+    <div class="section-title">Demandes de deban</div>
+
+    <?php if (empty($pendingUnbanRequests)): ?>
+        <div class="flash">Aucune demande en attente.</div>
+    <?php else: ?>
+        <div class="post-list">
+            <?php foreach ($pendingUnbanRequests as $request): ?>
+                <?php
+                $reqId = (int) $request['id'];
+                $reqUserId = (int) $request['user_id'];
+                $reqName = trim(($request['prenom'] ?? '') . ' ' . ($request['nom'] ?? ''));
+                $reqEmail = (string) ($request['email'] ?? '');
+                $reqReason = trim((string) ($request['reason'] ?? ''));
+                ?>
+                <div class="post-card">
+                    <div class="post-meta">
+                        <?php echo htmlspecialchars($reqName !== '' ? $reqName : 'Utilisateur', ENT_QUOTES, 'UTF-8'); ?>
+                        — <?php echo htmlspecialchars($reqEmail, ENT_QUOTES, 'UTF-8'); ?>
+                    </div>
+                    <div class="post-content">
+                        Demande le: <?php echo htmlspecialchars((string) $request['requested_at'], ENT_QUOTES, 'UTF-8'); ?>
+                        <?php if ($reqReason !== ''): ?>
+                            <br>Raison: <?php echo htmlspecialchars($reqReason, ENT_QUOTES, 'UTF-8'); ?>
+                        <?php endif; ?>
+                    </div>
+                    <div class="post-actions">
+                        <form method="POST" class="inline-form">
+                            <?php echo csrf_field(); ?>
+                            <input type="hidden" name="action" value="approve_user_unban">
+                            <input type="hidden" name="request_id" value="<?php echo $reqId; ?>">
+                            <input type="hidden" name="user_id" value="<?php echo $reqUserId; ?>">
+                            <button type="submit" class="btn btn-secondary btn-sm">Approuver</button>
+                        </form>
+                        <form method="POST" class="inline-form">
+                            <?php echo csrf_field(); ?>
+                            <input type="hidden" name="action" value="reject_user_unban">
+                            <input type="hidden" name="request_id" value="<?php echo $reqId; ?>">
+                            <input type="hidden" name="user_id" value="<?php echo $reqUserId; ?>">
+                            <button type="submit" class="btn btn-danger btn-sm">Refuser</button>
+                        </form>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         </div>
     <?php endif; ?>
 

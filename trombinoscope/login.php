@@ -40,6 +40,9 @@ $remember = false;
 $successMessage = '';
 $loginSuccess = false;
 $flashError = '';
+$isUserBanned = false;
+$bannedEmail = '';
+$banReason = '';
 if (isset($_SESSION['flash_error'])) {
     $flashError = $_SESSION['flash_error'];
     unset($_SESSION['flash_error']);
@@ -49,6 +52,7 @@ $ipAddressRaw = $_SERVER['REMOTE_ADDR'] ?? '';
 $ipAddress = $ipAddressRaw !== '' ? normalize_ip($ipAddressRaw) : '';
 $ipCandidates = array_values(array_unique(array_filter([$ipAddress, $ipAddressRaw])));
 $ipTablesReady = table_exists($pdo, 'ip_blocks') && table_exists($pdo, 'ip_unblock_requests');
+$userUnbanTablesReady = table_exists($pdo, 'user_unban_requests');
 $isIpBlocked = false;
 if (!empty($ipCandidates) && $ipTablesReady) {
     $placeholders = implode(',', array_fill(0, count($ipCandidates), '?'));
@@ -127,6 +131,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    if ($action === 'request_user_unban') {
+        if (!$userUnbanTablesReady) {
+            $_SESSION['flash_error'] = "La demande de deban utilisateur n'est pas encore configuree.";
+            header('Location: login.php');
+            exit();
+        }
+
+        $email = trim($_POST['email'] ?? '');
+        $reason = trim($_POST['reason'] ?? '');
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $_SESSION['flash_error'] = "Adresse email invalide.";
+            header('Location: login.php');
+            exit();
+        }
+
+        try {
+            $stmt = $pdo->prepare('SELECT id, prenom, nom, email, banned_at FROM utilisateurs WHERE email = ? LIMIT 1');
+            $stmt->execute([$email]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($user && !empty($user['banned_at'])) {
+                $stmt = $pdo->prepare('SELECT id FROM user_unban_requests WHERE user_id = ? AND status = ? LIMIT 1');
+                $stmt->execute([(int) $user['id'], 'pending']);
+                $alreadyPending = (bool) $stmt->fetchColumn();
+
+                if (!$alreadyPending) {
+                    $stmt = $pdo->prepare(
+                        'INSERT INTO user_unban_requests (user_id, reason) VALUES (?, ?)'
+                    );
+                    $stmt->execute([(int) $user['id'], $reason]);
+                }
+
+                $stmt = $pdo->prepare('SELECT email, prenom, nom FROM utilisateurs WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
+                $stmt->execute();
+                $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($admin) {
+                    $adminName = trim(($admin['prenom'] ?? '') . ' ' . ($admin['nom'] ?? ''));
+                    $adminUrl = app_url('admin-users.php');
+                    $userFullName = trim(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? ''));
+                    send_user_unban_request_to_admin(
+                        $admin['email'],
+                        $adminName !== '' ? $adminName : 'admin',
+                        $userFullName !== '' ? $userFullName : 'Utilisateur',
+                        $user['email'],
+                        $adminUrl,
+                        $reason
+                    );
+                }
+            }
+
+            $_SESSION['flash_success'] = "Votre demande a ete envoyee a un administrateur.";
+            header('Location: login.php');
+            exit();
+        } catch (Throwable $e) {
+            $_SESSION['flash_error'] = "Impossible d envoyer la demande de deban.";
+            header('Location: login.php');
+            exit();
+        }
+    }
+
     if ($isIpBlocked) {
         $_SESSION['flash_error'] = "Adresse IP bloquee. Debloquez l acces par email.";
         header('Location: login.php');
@@ -166,7 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errors)) {
-        $stmt = $pdo->prepare("SELECT id, prenom, nom, email, password, banned_at FROM utilisateurs WHERE email = ? LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id, prenom, nom, email, password, banned_at, ban_reason FROM utilisateurs WHERE email = ? LIMIT 1");
         $stmt->execute([$email]);
 
         if ($stmt->rowCount() < 1) {
@@ -180,6 +245,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (!empty($user['banned_at'])) {
                 $errors['password'] = "<span style='color:red;'>Erreur : Compte suspendu</span>";
+                $isUserBanned = true;
+                $bannedEmail = $user['email'] ?? $email;
+                $banReason = trim((string) ($user['ban_reason'] ?? ''));
             } elseif (!password_verify($password, $user['password'])) {
                 $errors['password'] = "<span style='color:red;'>Erreur : Email ou mot de passe incorrect</span>";
                 if ($ipAddress !== '') {
@@ -280,6 +348,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="email" id="unblock-email" name="email" placeholder="alice@exemple.fr" required>
                     </div>
                     <button type="submit" class="btn btn-secondary">Recevoir un email de debloquage</button>
+                </form>
+            <?php elseif ($isUserBanned): ?>
+                <div class="flash flash-error">
+                    Compte suspendu. Vous pouvez demander un deban a un administrateur.
+                </div>
+                <?php if ($banReason !== ''): ?>
+                    <div class="flash">
+                        Raison: <?php echo htmlspecialchars($banReason, ENT_QUOTES, 'UTF-8'); ?>
+                    </div>
+                <?php endif; ?>
+                <form action="" method="post">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="action" value="request_user_unban">
+                    <div class="form-group">
+                        <label for="unban-email">Adresse email</label>
+                        <input
+                            type="email"
+                            id="unban-email"
+                            name="email"
+                            placeholder="alice@exemple.fr"
+                            required
+                            value="<?php echo htmlspecialchars($bannedEmail !== '' ? $bannedEmail : $email, ENT_QUOTES, 'UTF-8'); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="unban-reason">Raison (optionnel)</label>
+                        <input type="text" id="unban-reason" name="reason" placeholder="Expliquez votre demande">
+                    </div>
+                    <button type="submit" class="btn btn-secondary">Demander un deban</button>
                 </form>
             <?php else: ?>
             <form action="" method="post">
