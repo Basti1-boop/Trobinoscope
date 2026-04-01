@@ -54,7 +54,7 @@ document.querySelectorAll('.copy-ip').forEach(function (btn) {
     if (!ip) { return; }
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(ip).then(function () {
-        btn.textContent = 'Copié';
+        btn.textContent = 'CopiÃ©';
         setTimeout(function () { btn.textContent = 'Copier'; }, 1000);
       }).catch(function () {});
     } else {
@@ -64,7 +64,7 @@ document.querySelectorAll('.copy-ip').forEach(function (btn) {
       temp.select();
       try { document.execCommand('copy'); } catch (e) {}
       document.body.removeChild(temp);
-      btn.textContent = 'Copié';
+      btn.textContent = 'CopiÃ©';
       setTimeout(function () { btn.textContent = 'Copier'; }, 1000);
     }
   });

@@ -266,3 +266,49 @@ function send_user_unban_decision_email(string $toEmail, string $toName, bool $a
         throw new RuntimeException('Erreur SMTP Mailtrap: ' . $e->getMessage());
     }
 }
+
+function send_report_auto_delete_to_admin(string $toEmail, string $toName, string $targetType, string $adminUrl): void
+{
+    $smtpHost = defined('MAILTRAP_SMTP_HOST') ? trim((string) MAILTRAP_SMTP_HOST) : '';
+    $smtpPort = defined('MAILTRAP_SMTP_PORT') ? (int) MAILTRAP_SMTP_PORT : 0;
+    $smtpUsername = defined('MAILTRAP_SMTP_USERNAME') ? trim((string) MAILTRAP_SMTP_USERNAME) : '';
+    $smtpPassword = defined('MAILTRAP_SMTP_PASSWORD') ? trim((string) MAILTRAP_SMTP_PASSWORD) : '';
+
+    if ($smtpHost === '' || $smtpPort <= 0 || $smtpUsername === '' || $smtpPassword === '') {
+        throw new RuntimeException('Configuration SMTP Mailtrap incomplete dans config.php.');
+    }
+
+    $safeType = $targetType === 'commentaire' ? 'un commentaire' : 'une publication';
+
+    try {
+        $mailer = new PHPMailer(true);
+        $mailer->isSMTP();
+        $mailer->Host = $smtpHost;
+        $mailer->Port = $smtpPort;
+        $mailer->SMTPAuth = true;
+        $mailer->Username = $smtpUsername;
+        $mailer->Password = $smtpPassword;
+        $mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mailer->CharSet = 'UTF-8';
+
+        $mailer->setFrom('hello@demomailtrap.co', 'Trombinoscope');
+        $mailer->addAddress($toEmail, $toName);
+        $mailer->Subject = 'Suppression automatique apres signalements';
+
+        $html = '<p>Bonjour ' . htmlspecialchars($toName, ENT_QUOTES, 'UTF-8') . ',</p>'
+            . '<p>Un contenu (' . htmlspecialchars($safeType, ENT_QUOTES, 'UTF-8') . ') a ete supprime automatiquement apres 5 signalements.</p>'
+            . '<p>Ouvrez le panneau de moderation pour valider ou restaurer :</p>'
+            . '<p><a href="' . htmlspecialchars($adminUrl, ENT_QUOTES, 'UTF-8') . '">Acceder a la moderation</a></p>';
+
+        $text = "Bonjour {$toName},\n\n"
+            . "Un contenu ({$safeType}) a ete supprime automatiquement apres 5 signalements.\n"
+            . "Ouvrez le panneau de moderation pour valider ou restaurer : {$adminUrl}\n";
+
+        $mailer->isHTML(true);
+        $mailer->Body = $html;
+        $mailer->AltBody = $text;
+        $mailer->send();
+    } catch (Exception $e) {
+        throw new RuntimeException('Erreur SMTP Mailtrap: ' . $e->getMessage());
+    }
+}

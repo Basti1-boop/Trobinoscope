@@ -42,6 +42,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Ensure consistent UTF-8 output for accents
+if (!headers_sent()) {
+    header('Content-Type: text/html; charset=UTF-8');
+}
+
 function csrf_token(): string
 {
     if (empty($_SESSION['csrf_token'])) {

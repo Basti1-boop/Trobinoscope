@@ -176,7 +176,7 @@ if (table_exists($pdo, 'user_unban_requests')) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trombinoscope • Admin Utilisateurs</title>
+    <title>Trombinoscope â€¢ Admin Utilisateurs</title>
     <link rel="stylesheet" href="./assets/css/style.css">
     <link rel="stylesheet" href="./assets/css/admin.css">
     <script src="./assets/js/script.js?v=20260326" defer></script>
@@ -195,12 +195,13 @@ if (table_exists($pdo, 'user_unban_requests')) {
         <li><a href="profil.php?id=<?php echo (int) $_SESSION['user_id']; ?>">Mon profil</a></li>
         <li><a href="admin.php">Admin IP</a></li>
         <li><a href="admin-users.php" style="color: var(--accent); font-weight: 600;">Admin Utilisateurs</a></li>
+        <li><a href="admin-reports.php">Moderation</a></li>
         <li><a href="logout.php" class="btn-nav">Deconnexion</a></li>
     </ul>
 </nav>
 
 <div class="container">
-    <a href="admin.php" class="back-link">← Retour admin IP</a>
+    <a href="admin.php" class="back-link">â† Retour admin IP</a>
 
     <?php if ($message !== ''): ?>
         <div class="flash flash-success">
@@ -230,7 +231,7 @@ if (table_exists($pdo, 'user_unban_requests')) {
                 <div class="post-card">
                     <div class="post-meta">
                         <?php echo htmlspecialchars($reqName !== '' ? $reqName : 'Utilisateur', ENT_QUOTES, 'UTF-8'); ?>
-                        — <?php echo htmlspecialchars($reqEmail, ENT_QUOTES, 'UTF-8'); ?>
+                        â€” <?php echo htmlspecialchars($reqEmail, ENT_QUOTES, 'UTF-8'); ?>
                     </div>
                     <div class="post-content">
                         Demande le: <?php echo htmlspecialchars((string) $request['requested_at'], ENT_QUOTES, 'UTF-8'); ?>
@@ -280,7 +281,7 @@ if (table_exists($pdo, 'user_unban_requests')) {
                         <?php if ($isAdmin): ?>
                             <span class="badge-owner">Admin</span>
                         <?php endif; ?>
-                        — <?php echo htmlspecialchars($user['email'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                        â€” <?php echo htmlspecialchars($user['email'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
                     </div>
                     <div class="post-content">
                         Promo: <?php echo htmlspecialchars($user['promo'] ?? '', ENT_QUOTES, 'UTF-8'); ?>

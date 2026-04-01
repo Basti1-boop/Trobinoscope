@@ -491,7 +491,7 @@ if (isset($_SESSION['flash_error'])) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trombinoscope � Profil <?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?></title>
+  <title>Trombinoscope - Profil <?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?></title>
   <link rel="stylesheet" href="./assets/css/style.css">
   <script src="./assets/js/script.js?v=20260326" defer></script>
 </head>
@@ -510,6 +510,7 @@ if (isset($_SESSION['flash_error'])) {
       <?php if (!empty($_SESSION['is_admin'])): ?>
           <li><a href="admin.php">Admin IP</a></li>
           <li><a href="admin-users.php">Admin Utilisateurs</a></li>
+          <li><a href="admin-reports.php">Moderation</a></li>
         <?php endif; ?>
 
       <?php if ($isLoggedIn): ?>
@@ -556,7 +557,7 @@ if (isset($_SESSION['flash_error'])) {
         <h1><?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?></h1>
         <?php if ($specialite !== '' || $promo !== ''): ?>
           <div class="role">
-            <?php echo htmlspecialchars(trim($specialite . ' � ' . $promo), ENT_QUOTES, 'UTF-8'); ?>
+            <?php echo htmlspecialchars(trim($specialite . ' - ' . $promo), ENT_QUOTES, 'UTF-8'); ?>
           </div>
         <?php endif; ?>
         <div class="bio"><?php echo nl2br(htmlspecialchars($bio, ENT_QUOTES, 'UTF-8')); ?></div>
@@ -614,7 +615,10 @@ if (isset($_SESSION['flash_error'])) {
             <?php if ($isOwner): ?>
               <span class="badge-owner">Vous</span>
             <?php endif; ?>
-            � <?php echo htmlspecialchars($publication['created_at'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+            - <?php echo htmlspecialchars($publication['created_at'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+            <?php if ($isLoggedIn && !$isOwner && !$isFakeProfile): ?>
+              <button class="report-action-btn" type="button" onclick="openReportModal('publication', <?php echo $pubId; ?>, '<?php echo htmlspecialchars(substr($publication['contenu'], 0, 100), ENT_QUOTES, 'UTF-8'); ?>')">Signaler</button>
+            <?php endif; ?>
           </div>
           <div class="post-content">
             <?php echo nl2br(htmlspecialchars($publication['contenu'] ?? '', ENT_QUOTES, 'UTF-8')); ?>
@@ -670,8 +674,11 @@ if (isset($_SESSION['flash_error'])) {
                   </a>
                   <?php if (!empty($comment['created_at'])): ?>
                     <span class="comment-meta">
-                      � <?php echo htmlspecialchars($comment['created_at'], ENT_QUOTES, 'UTF-8'); ?>
+                      - <?php echo htmlspecialchars($comment['created_at'], ENT_QUOTES, 'UTF-8'); ?>
                     </span>
+                  <?php endif; ?>
+                  <?php if ($isLoggedIn && !$isFakeProfile && (int) ($comment['utilisateur_id'] ?? 0) !== (int) $_SESSION['user_id']): ?>
+                    <button class="report-action-btn" type="button" onclick="openReportModal('commentaire', <?php echo (int) ($comment['id'] ?? 0); ?>, '<?php echo htmlspecialchars(substr($comment['contenu'], 0, 100), ENT_QUOTES, 'UTF-8'); ?>')">Signaler</button>
                   <?php endif; ?>
                 </div>
                 <div class="comment-text">
@@ -725,9 +732,63 @@ if (isset($_SESSION['flash_error'])) {
     </div>
   </footer>
 
+  <!-- Report Modal -->
+  <div id="reportModal" class="report-modal" style="display: none;" aria-hidden="true">
+    <div class="report-modal-content">
+      <div class="report-modal-header">
+        <h3>Signaler un contenu</h3>
+        <p>Merci de nous aider a maintenir un environnement respectueux.</p>
+      </div>
+      <div class="report-modal-body">
+        <div id="reportedContent" class="reported-content"></div>
+        <form id="reportForm" action="report.php" method="POST">
+          <?php echo csrf_field(); ?>
+          <input type="hidden" name="target_type" id="reportTargetType">
+          <input type="hidden" name="target_id" id="reportTargetId">
+          <div class="report-form-group">
+            <label for="reportReason">Raison du signalement (optionnel)</label>
+            <textarea name="reason" id="reportReason" rows="4" placeholder="Decrivez pourquoi vous signalez ce contenu..."></textarea>
+          </div>
+          <div class="report-modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeReportModal()">Annuler</button>
+            <button type="submit" class="btn-report">Signaler</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openReportModal(targetType, targetId, content) {
+      document.getElementById('reportTargetType').value = targetType;
+      document.getElementById('reportTargetId').value = targetId;
+      document.getElementById('reportedContent').textContent = content;
+      const modal = document.getElementById('reportModal');
+      modal.style.display = 'flex';
+      modal.setAttribute('aria-hidden', 'false');
+      modal.classList.add('show');
+      document.getElementById('reportReason').focus();
+    }
+
+    function closeReportModal() {
+      const modal = document.getElementById('reportModal');
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden', 'true');
+      modal.style.display = 'none';
+      document.getElementById('reportForm').reset();
+    }
+
+    document.getElementById('reportModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeReportModal();
+      }
+    });
+  </script>
+
 </body>
 
 </html>
+
 
 
 

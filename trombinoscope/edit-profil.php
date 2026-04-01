@@ -229,7 +229,7 @@ if ($avatar === '' || $avatar === 'default.svg') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trombinoscope — Modifier mon profil</title>
+  <title>Trombinoscope â€” Modifier mon profil</title>
   <link rel="stylesheet" href="./assets/css/style.css">
   <script src="./assets/js/script.js?v=20260326" defer></script>
 </head>

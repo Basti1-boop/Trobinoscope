@@ -162,6 +162,7 @@ $totalPublications = (int) $stmt->fetchColumn();
             <li><a href="profil.php?id=<?php echo (int) $_SESSION['user_id']; ?>">Mon profil</a></li>
             <li><a href="admin.php" style="color: var(--accent); font-weight: 600;">Admin IP</a></li>
             <li><a href="admin-users.php">Admin Utilisateurs</a></li>
+            <li><a href="admin-reports.php">Moderation</a></li>
             <li><a href="logout.php" class="btn-nav">Deconnexion</a></li>
         </ul>
     </nav>

@@ -608,7 +608,7 @@ textarea {
   white-space: nowrap;
 }
 
-/* BADGE PROPRIÉTAIRE */
+/* BADGE PROPRIÃ‰TAIRE */
 .badge-owner {
   display: inline-block;
   background: var(--accent-light);
@@ -726,14 +726,14 @@ footer {
   color: var(--muted);
 }
 
-/* RESPONSIVE — tablette */
+/* RESPONSIVE â€” tablette */
 @media (max-width: 900px) {
   .trombi-grid {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
 }
 
-/* RESPONSIVE — mobile */
+/* RESPONSIVE â€” mobile */
 @media (max-width: 768px) {
   nav {
     padding: 0 1rem;

@@ -144,6 +144,25 @@ CREATE TABLE user_unban_requests (
     INDEX idx_user_unban_user (user_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE moderation_queue (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    target_type ENUM('publication', 'commentaire') NOT NULL,
+    target_id INT NOT NULL,
+    publication_id INT NULL,
+    author_id INT NOT NULL,
+    target_content TEXT NOT NULL,
+    target_created_at DATETIME NULL,
+    status ENUM('pending', 'kept_deleted', 'restored') NOT NULL DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    handled_at DATETIME NULL,
+    handled_by INT NULL,
+    UNIQUE KEY uq_moderation_target (target_type, target_id),
+    INDEX idx_moderation_status (status),
+    INDEX idx_moderation_author (author_id),
+    FOREIGN KEY (author_id) REFERENCES utilisateurs (id) ON DELETE CASCADE,
+    FOREIGN KEY (handled_by) REFERENCES utilisateurs (id) ON DELETE SET NULL
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
 INSERT INTO utilisateurs (prenom, nom, email, password, promo, specialite, bio, avatar, is_admin)
 SELECT
     'Admin',
