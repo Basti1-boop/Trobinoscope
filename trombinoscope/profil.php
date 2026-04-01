@@ -491,7 +491,7 @@ if (isset($_SESSION['flash_error'])) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trombinoscope — Profil <?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?></title>
+  <title>Trombinoscope ï¿½ Profil <?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?></title>
   <link rel="stylesheet" href="./assets/css/style.css">
   <script src="./assets/js/script.js?v=20260326" defer></script>
 </head>
@@ -507,6 +507,11 @@ if (isset($_SESSION['flash_error'])) {
     </button>
     <ul class="nav-links">
       <li><a href="index.php">Accueil</a></li>
+      <?php if (!empty($_SESSION['is_admin'])): ?>
+          <li><a href="admin.php">Admin IP</a></li>
+          <li><a href="admin-users.php">Admin Utilisateurs</a></li>
+        <?php endif; ?>
+
       <?php if ($isLoggedIn): ?>
         <li><a href="profil.php?id=<?php echo (int) $_SESSION['user_id']; ?>">Mon profil</a></li>
         <li><a href="logout.php" class="btn-nav">Deconnexion</a></li>
@@ -551,7 +556,7 @@ if (isset($_SESSION['flash_error'])) {
         <h1><?php echo htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8'); ?></h1>
         <?php if ($specialite !== '' || $promo !== ''): ?>
           <div class="role">
-            <?php echo htmlspecialchars(trim($specialite . ' — ' . $promo), ENT_QUOTES, 'UTF-8'); ?>
+            <?php echo htmlspecialchars(trim($specialite . ' ï¿½ ' . $promo), ENT_QUOTES, 'UTF-8'); ?>
           </div>
         <?php endif; ?>
         <div class="bio"><?php echo nl2br(htmlspecialchars($bio, ENT_QUOTES, 'UTF-8')); ?></div>
@@ -609,7 +614,7 @@ if (isset($_SESSION['flash_error'])) {
             <?php if ($isOwner): ?>
               <span class="badge-owner">Vous</span>
             <?php endif; ?>
-            — <?php echo htmlspecialchars($publication['created_at'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+            ï¿½ <?php echo htmlspecialchars($publication['created_at'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
           </div>
           <div class="post-content">
             <?php echo nl2br(htmlspecialchars($publication['contenu'] ?? '', ENT_QUOTES, 'UTF-8')); ?>
@@ -665,7 +670,7 @@ if (isset($_SESSION['flash_error'])) {
                   </a>
                   <?php if (!empty($comment['created_at'])): ?>
                     <span class="comment-meta">
-                      — <?php echo htmlspecialchars($comment['created_at'], ENT_QUOTES, 'UTF-8'); ?>
+                      ï¿½ <?php echo htmlspecialchars($comment['created_at'], ENT_QUOTES, 'UTF-8'); ?>
                     </span>
                   <?php endif; ?>
                 </div>
